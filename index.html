@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#2563eb">
+<meta name="description" content="DTI Workplace Experience Learning System">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DTI WEL">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='32' fill='%232563eb'/><text x='90' y='120' font-size='100' text-anchor='middle' fill='white'>🎓</text></svg>">
+<title>DTI WEL System</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;overflow-x:hidden}
+.sidebar-scroll::-webkit-scrollbar{width:4px}.sidebar-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease}
+.modal-backdrop{background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+<script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+<script type="text/babel">
+const {useState,useEffect,useMemo,useCallback}=React;
+const {BarChart,Bar,LineChart,Line,PieChart,Pie,Cell,XAxis,YAxis,CartesianGrid,Tooltip,Legend,ResponsiveContainer,AreaChart,Area,RadarChart,Radar,PolarGrid,PolarAngleAxis,PolarRadiusAxis}=Recharts;
+
+// ===== ICON HELPER =====
+const Ic=({n,c="",s=20})=><i className={`bi bi-${n} ${c}`} style={{fontSize:s}}></i>;
+const ICON_MAP={
+  users:"people",home:"house",book:"book",briefcase:"briefcase",bell:"bell",chart:"bar-chart-line",
+  clipboard:"clipboard-check",building:"building",file:"file-text",alert:"exclamation-circle",
+  usercheck:"person-check",mail:"envelope",shield:"shield-check",award:"award",target:"bullseye",
+  trend:"graph-up-arrow",chevron:"chevron-right",search:"search",plus:"plus-lg",download:"download",
+  eye:"eye",edit:"pencil",check:"check-circle",clock:"clock",star:"star-fill",logout:"box-arrow-right",
+  menu:"list",x:"x-lg",upload:"upload",send:"send",grad:"mortarboard",compass:"compass",heart:"heart",
+  zap:"lightning",pin:"geo-alt",phone:"telephone",arrow:"arrow-right",warn:"exclamation-triangle",
+  adduser:"person-plus",folder:"folder2-open",filecheck:"file-earmark-check",settings:"gear",
+  calendar:"calendar",filter:"funnel",globe:"globe",trash:"trash",msg:"chat-dots",layers:"layers"
+};
+const I=({name,className="",size=20})=><Ic n={ICON_MAP[name]||name} c={className} s={size}/>;
+
+// ===== MOCK DATA =====
+const LEARNERS=[
+  {id:1,name:"Kwame Asante",email:"kwame@dti.edu.gh",gender:"Male",region:"Greater Accra",qualification:"Diploma in ICT",industry:"TechCorp Ghana",supervisor:"Dr. Mensah",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:78,skills:["Python","Web Dev","Database"],logEntries:45,issuesReported:2,specialNeeds:false},
+  {id:2,name:"Ama Boateng",email:"ama@dti.edu.gh",gender:"Female",region:"Ashanti",qualification:"HND Fashion Design",industry:"StyleHouse Ltd",supervisor:"Mrs. Owusu",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:85,skills:["Pattern Making","CAD Design","Textiles"],logEntries:52,issuesReported:0,specialNeeds:false},
+  {id:3,name:"Kofi Mensah",email:"kofi@dti.edu.gh",gender:"Male",region:"Western",qualification:"Diploma in Electrical",industry:"PowerGrid Solutions",supervisor:"Eng. Addo",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:62,skills:["Wiring","PLC","Safety"],logEntries:38,issuesReported:1,specialNeeds:false},
+  {id:4,name:"Efua Darkwa",email:"efua@dti.edu.gh",gender:"Female",region:"Central",qualification:"HND Hospitality",industry:"Golden Tulip Hotel",supervisor:"Mr. Tetteh",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:91,skills:["Front Desk","F&B","Event Mgmt"],logEntries:58,issuesReported:0,specialNeeds:false},
+  {id:5,name:"Yaw Frimpong",email:"yaw@dti.edu.gh",gender:"Male",region:"Eastern",qualification:"Diploma in Auto Mechanics",industry:"Japan Motors",supervisor:"Mr. Appiah",status:"Completed",startDate:"2025-04-01",endDate:"2025-09-30",progress:100,skills:["Engine Repair","Diagnostics","Welding"],logEntries:78,issuesReported:3,specialNeeds:false},
+  {id:6,name:"Akua Serwaa",email:"akua@dti.edu.gh",gender:"Female",region:"Volta",qualification:"HND Catering",industry:"Papaye Fast Food",supervisor:"Chef Adu",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:55,skills:["Cooking","Hygiene","Menu Planning"],logEntries:32,issuesReported:1,specialNeeds:true},
+  {id:7,name:"Nana Osei",email:"nana@dti.edu.gh",gender:"Male",region:"Northern",qualification:"Diploma in Welding",industry:"Tema Steel Works",supervisor:"Mr. Quaye",status:"Dropped",startDate:"2025-10-01",endDate:"2026-03-31",progress:15,skills:["MIG Welding","Safety","Blueprint"],logEntries:8,issuesReported:4,specialNeeds:false},
+  {id:8,name:"Adwoa Poku",email:"adwoa@dti.edu.gh",gender:"Female",region:"Bono",qualification:"HND Cosmetology",industry:"Glamour Salon",supervisor:"Mrs. Mensah",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:72,skills:["Hair Styling","Makeup","Nail Art"],logEntries:44,issuesReported:0,specialNeeds:false},
+];
+
+const INDUSTRIES=[
+  {id:1,name:"TechCorp Ghana",sector:"ICT",region:"Greater Accra",contact:"Mr. Agyeman",phone:"+233 30 255 1001",email:"hr@techcorp.gh",capacity:15,currentInterns:8,rating:4.5,mou:"Active"},
+  {id:2,name:"StyleHouse Ltd",sector:"Fashion",region:"Ashanti",contact:"Mrs. Owusu",phone:"+233 32 205 1002",email:"training@stylehouse.gh",capacity:10,currentInterns:6,rating:4.8,mou:"Active"},
+  {id:3,name:"PowerGrid Solutions",sector:"Electrical",region:"Western",contact:"Eng. Addo",phone:"+233 31 204 1003",email:"hr@powergrid.gh",capacity:12,currentInterns:5,rating:4.2,mou:"Active"},
+  {id:4,name:"Golden Tulip Hotel",sector:"Hospitality",region:"Greater Accra",contact:"Mr. Tetteh",phone:"+233 30 263 1004",email:"training@goldentulip.gh",capacity:20,currentInterns:12,rating:4.6,mou:"Active"},
+  {id:5,name:"Japan Motors",sector:"Automotive",region:"Greater Accra",contact:"Mr. Appiah",phone:"+233 30 221 1005",email:"hr@japanmotors.gh",capacity:8,currentInterns:4,rating:4.0,mou:"Expiring"},
+  {id:6,name:"Papaye Fast Food",sector:"Catering",region:"Greater Accra",contact:"Chef Adu",phone:"+233 30 277 1006",email:"ops@papaye.gh",capacity:10,currentInterns:7,rating:3.9,mou:"Active"},
+];
+
+const ISSUES=[
+  {id:1,learner:"Kwame Asante",category:"Workplace Safety",description:"Inadequate safety equipment in server room",status:"In Progress",priority:"High",dateReported:"2026-02-15",assignedTo:"WEL Officer"},
+  {id:2,learner:"Kofi Mensah",category:"Supervision",description:"Supervisor frequently absent from site",status:"Open",priority:"Medium",dateReported:"2026-03-01",assignedTo:"WEL Coordinator"},
+  {id:3,learner:"Akua Serwaa",category:"Accessibility",description:"Need wheelchair ramp at workstation",status:"Resolved",priority:"High",dateReported:"2026-01-20",assignedTo:"Facilities"},
+  {id:4,learner:"Nana Osei",category:"Harassment",description:"Verbal harassment from co-worker",status:"Escalated",priority:"Critical",dateReported:"2026-02-28",assignedTo:"CEO Office"},
+];
+
+const NOTIFICATIONS=[
+  {id:1,type:"Welcome",message:"Welcome to DTI WEL Programme, Batch 2025B!",date:"2025-10-01",audience:"All Learners",status:"Sent"},
+  {id:2,type:"Event",message:"Career Fair at Accra International Conference Centre - March 25",date:"2026-03-10",audience:"All",status:"Scheduled"},
+  {id:3,type:"Reminder",message:"Monthly logbook submission deadline - March 31",date:"2026-03-15",audience:"Active Learners",status:"Sent"},
+  {id:4,type:"Alumni",message:"Employment status update survey - Q1 2026",date:"2026-03-01",audience:"Alumni",status:"Sent"},
+];
+
+const EMPLOYMENT_REQUESTS=[
+  {id:1,employer:"TechCorp Ghana",position:"Junior Developer",count:3,skills:["Python","React","SQL"],status:"Open",datePosted:"2026-03-01",deadline:"2026-04-15",matched:2},
+  {id:2,employer:"Golden Tulip Hotel",position:"Front Desk Officer",count:2,skills:["Customer Service","MS Office"],status:"Fulfilled",datePosted:"2026-02-01",deadline:"2026-03-01",matched:2},
+  {id:3,employer:"StyleHouse Ltd",position:"Fashion Designer",count:1,skills:["CAD","Pattern Making"],status:"Open",datePosted:"2026-03-10",deadline:"2026-04-30",matched:0},
+];
+
+const ALUMNI_DATA=[
+  {id:1,name:"Yaw Frimpong",batch:"2025A",qualification:"Auto Mechanics",status:"Employed",employer:"Japan Motors",role:"Junior Mechanic"},
+  {id:2,name:"Esi Aidoo",batch:"2024B",qualification:"ICT",status:"Self-Employed",employer:"Own Business",role:"Freelance Developer"},
+  {id:3,name:"Kweku Baah",batch:"2024A",qualification:"Hospitality",status:"Unemployed",employer:"-",role:"-"},
+  {id:4,name:"Abena Nyarko",batch:"2025A",qualification:"Fashion Design",status:"Further Studies",employer:"KNUST",role:"BSc Student"},
+  {id:5,name:"Yaw Mensah",batch:"2024B",qualification:"Electrical",status:"Employed",employer:"ECG",role:"Technician"},
+];
+
+const LOG_ENTRIES=[
+  {id:1,date:"2026-03-17",learner:"Kwame Asante",task:"Developed REST API endpoints for authentication module",hours:8,rating:4,competencies:["Backend Dev","Security"]},
+  {id:2,date:"2026-03-16",learner:"Kwame Asante",task:"Database schema design for inventory system",hours:7,rating:3,competencies:["Database Design"]},
+  {id:3,date:"2026-03-17",learner:"Ama Boateng",task:"Created pattern templates for spring collection",hours:8,rating:5,competencies:["Pattern Making","Design"]},
+  {id:4,date:"2026-03-17",learner:"Efua Darkwa",task:"Managed front desk and VIP check-ins",hours:9,rating:5,competencies:["Customer Service","Operations"]},
+];
+
+const SKILLS_MATRIX=[
+  {skill:"Technical",kwame:80,ama:90,efua:85},{skill:"Communication",kwame:75,ama:85,efua:95},
+  {skill:"Problem Solving",kwame:85,ama:80,efua:80},{skill:"Teamwork",kwame:70,ama:90,efua:90},
+  {skill:"Initiative",kwame:80,ama:75,efua:85},{skill:"Professionalism",kwame:75,ama:95,efua:90},
+];
+
+const COLORS=["#2563eb","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899","#14b8a6"];
+
+// ===== REUSABLE COMPONENTS =====
+const Badge=({children,color="blue"})=>{
+  const c={blue:"bg-blue-100 text-blue-800",green:"bg-green-100 text-green-800",yellow:"bg-yellow-100 text-yellow-800",red:"bg-red-100 text-red-800",purple:"bg-purple-100 text-purple-800",gray:"bg-gray-100 text-gray-800",orange:"bg-orange-100 text-orange-800",cyan:"bg-cyan-100 text-cyan-800"};
+  return <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${c[color]}`}>{children}</span>;
+};
+
+const StatCard=({icon,label,value,sub,color="blue",trend})=>{
+  const bgMap={blue:"bg-blue-50",green:"bg-green-50",yellow:"bg-yellow-50",red:"bg-red-50",purple:"bg-purple-50",orange:"bg-orange-50",cyan:"bg-cyan-50"};
+  const txtMap={blue:"text-blue-600",green:"text-green-600",yellow:"text-yellow-600",red:"text-red-600",purple:"text-purple-600",orange:"text-orange-600",cyan:"text-cyan-600"};
+  return(
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between">
+        <div className={`p-3 rounded-xl ${bgMap[color]}`}><I name={icon} className={txtMap[color]} size={22}/></div>
+        {trend&&<span className={`text-xs font-semibold flex items-center gap-1 ${trend>0?"text-green-600":"text-red-600"}`}><I name="trend" size={12}/>{Math.abs(trend)}%</span>}
+      </div>
+      <div className="mt-4"><p className="text-2xl font-bold text-gray-900">{value}</p><p className="text-sm text-gray-500 mt-1">{label}</p>{sub&&<p className="text-xs text-gray-400 mt-1">{sub}</p>}</div>
+    </div>
+  );
+};
+
+const ProgressBar=({value,color="blue",size="md"})=>{
+  const cMap={blue:"bg-blue-500",green:"bg-green-500",yellow:"bg-yellow-500",red:"bg-red-500",purple:"bg-purple-500"};
+  return <div className={`w-full bg-gray-100 rounded-full ${size==="sm"?"h-1.5":"h-2.5"}`}><div className={`h-full rounded-full ${cMap[color]} transition-all duration-500`} style={{width:`${value}%`}}/></div>;
+};
+
+const Modal=({isOpen,onClose,title,children})=>{
+  if(!isOpen)return null;
+  return(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="fixed inset-0 modal-backdrop"/>
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto fade-in" onClick={e=>e.stopPropagation()}>
+        <div className="sticky top-0 bg-white flex items-center justify-between p-5 border-b border-gray-100 rounded-t-2xl z-10">
+          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><I name="x" size={18}/></button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+};
+
+const SearchBar=({value,onChange,placeholder})=>(
+  <div className="relative">
+    <I name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16}/>
+    <input type="text" value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder||"Search..."}
+      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
+  </div>
+);
+
+const TabNav=({tabs,active,onChange})=>(
+  <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+    {tabs.map(t=><button key={t.id} onClick={()=>onChange(t.id)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${active===t.id?"bg-white text-blue-700 shadow-sm":"text-gray-600 hover:text-gray-900"}`}>{t.label}</button>)}
+  </div>
+);
+
+const DataTable=({columns,data,onRowClick})=>(
+  <div className="overflow-x-auto">
+    <table className="w-full">
+      <thead><tr className="border-b border-gray-200">{columns.map((c,i)=><th key={i} className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{c.header}</th>)}</tr></thead>
+      <tbody>{data.map((r,i)=><tr key={i} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${onRowClick?"cursor-pointer":""}`} onClick={()=>onRowClick?.(r)}>
+        {columns.map((c,j)=><td key={j} className="py-3 px-4 text-sm text-gray-700">{c.render?c.render(r):r[c.key]}</td>)}
+      </tr>)}</tbody>
+    </table>
+  </div>
+);
+
+const Avatar=({name,size="9"})=>{
+  const initials=name.split(" ").map(n=>n[0]).join("");
+  return <div className={`w-${size} h-${size} rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm`}>{initials}</div>;
+};
+
+// ===== MODULES =====
+
+// 1. PLACEMENTS
+const PlacementModule=()=>{
+  const [search,setSearch]=useState("");
+  const [filterStatus,setFilterStatus]=useState("All");
+  const [selected,setSelected]=useState(null);
+  const statuses=["All","Active","Completed","Dropped"];
+  const filtered=LEARNERS.filter(l=>(filterStatus==="All"||l.status===filterStatus)&&(l.name.toLowerCase().includes(search.toLowerCase())||l.industry.toLowerCase().includes(search.toLowerCase())));
+
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">Learner Placement Management</h2><p className="text-sm text-gray-500 mt-1">Track and manage all internship placements</p></div>
+        <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="plus" size={16}/> New Placement</button>
+      </div>
+      <div className="flex flex-wrap gap-3 mb-6">
+        <div className="flex-1 min-w-[200px]"><SearchBar value={search} onChange={setSearch} placeholder="Search learner or industry..."/></div>
+        <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">{statuses.map(s=><option key={s}>{s}</option>)}</select>
+        <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50"><I name="download" size={16}/> Export</button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon="users" label="Total Learners" value={LEARNERS.length} color="blue"/>
+        <StatCard icon="check" label="Active" value={LEARNERS.filter(l=>l.status==="Active").length} color="green"/>
+        <StatCard icon="award" label="Completed" value={LEARNERS.filter(l=>l.status==="Completed").length} color="purple"/>
+        <StatCard icon="warn" label="Dropouts" value={LEARNERS.filter(l=>l.status==="Dropped").length} color="red"/>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200">
+        <DataTable columns={[
+          {header:"Learner",render:r=><div className="flex items-center gap-3"><Avatar name={r.name}/><div><p className="font-medium text-gray-900">{r.name}</p><p className="text-xs text-gray-400">{r.qualification}</p></div></div>},
+          {header:"Industry",key:"industry"},
+          {header:"Region",key:"region"},
+          {header:"Progress",render:r=><div className="w-28"><div className="flex justify-between text-xs mb-1"><span>{r.progress}%</span></div><ProgressBar value={r.progress} color={r.progress>75?"green":r.progress>50?"yellow":"red"} size="sm"/></div>},
+          {header:"Status",render:r=><Badge color={r.status==="Active"?"green":r.status==="Completed"?"blue":"red"}>{r.status}</Badge>},
+          {header:"",render:r=><button onClick={e=>{e.stopPropagation();setSelected(r);}} className="p-1.5 hover:bg-gray-100 rounded-lg"><I name="eye" size={16} className="text-gray-400"/></button>},
+        ]} data={filtered} onRowClick={setSelected}/>
+      </div>
+      <Modal isOpen={!!selected} onClose={()=>setSelected(null)} title={selected?.name||""}>
+        {selected&&<div className="space-y-6">
+          <div className="grid grid-cols-3 gap-4">
+            {[["Industry",selected.industry],["Supervisor",selected.supervisor],["Duration",`${selected.startDate} to ${selected.endDate}`]].map(([l,v])=><div key={l} className="bg-gray-50 p-4 rounded-xl"><p className="text-xs text-gray-500">{l}</p><p className="font-semibold mt-1">{v}</p></div>)}
+          </div>
+          <div><p className="text-sm font-semibold mb-3">Competency Progress</p><div className="space-y-3">{selected.skills.map(s=><div key={s} className="flex items-center gap-3"><span className="text-sm text-gray-600 w-28">{s}</span><div className="flex-1"><ProgressBar value={60+Math.random()*35} color="blue"/></div></div>)}</div></div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-xl"><p className="text-2xl font-bold text-blue-700">{selected.logEntries}</p><p className="text-xs text-blue-600">Log Entries</p></div>
+            <div className="text-center p-4 bg-green-50 rounded-xl"><p className="text-2xl font-bold text-green-700">{selected.progress}%</p><p className="text-xs text-green-600">Progress</p></div>
+            <div className="text-center p-4 bg-orange-50 rounded-xl"><p className="text-2xl font-bold text-orange-700">{selected.issuesReported}</p><p className="text-xs text-orange-600">Issues</p></div>
+          </div>
+        </div>}
+      </Modal>
+    </div>
+  );
+};
+
+// 2. SURVEY
+const SurveyModule=()=>{
+  const [tab,setTab]=useState("responses");
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">Learner Survey Collection</h2><p className="text-sm text-gray-500 mt-1">Collect and manage biodata, feedback, and assessments</p></div>
+        <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="plus" size={16}/> New Survey</button>
+      </div>
+      <TabNav tabs={[{id:"responses",label:"Responses"},{id:"forms",label:"Survey Forms"},{id:"analytics",label:"Analytics"}]} active={tab} onChange={setTab}/>
+      <div className="mt-6">
+        {tab==="responses"&&<div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard icon="file" label="Total Responses" value="247" color="blue" trend={12}/>
+            <StatCard icon="check" label="Completed" value="198" color="green"/>
+            <StatCard icon="clock" label="Pending" value="49" color="yellow"/>
+            <StatCard icon="star" label="Avg. Satisfaction" value="4.2/5" color="purple"/>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="font-semibold mb-4">Recent Responses</h3>
+            <DataTable columns={[
+              {header:"Learner",render:r=><span className="font-medium">{r.name}</span>},
+              {header:"Survey Type",key:"type"},{header:"Date",key:"date"},
+              {header:"Status",render:r=><Badge color={r.complete?"green":"yellow"}>{r.complete?"Complete":"Partial"}</Badge>},
+            ]} data={[
+              {name:"Kwame Asante",type:"Biodata & Residential",date:"2026-03-15",complete:true},
+              {name:"Ama Boateng",type:"Mid-Placement Feedback",date:"2026-03-14",complete:true},
+              {name:"Kofi Mensah",type:"Biodata & Residential",date:"2026-03-14",complete:false},
+              {name:"Efua Darkwa",type:"Supervisor Evaluation",date:"2026-03-13",complete:true},
+            ]}/>
+          </div>
+        </div>}
+        {tab==="forms"&&<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {["Learner Biodata Form","Mid-Placement Feedback","End-of-Placement Survey","Supervisor Evaluation","Alumni Employment Status","Industry Partner Satisfaction"].map((f,i)=>(
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3"><div className="p-2.5 bg-blue-50 rounded-xl"><I name="clipboard" className="text-blue-600"/></div><div><p className="font-semibold text-gray-900">{f}</p><p className="text-xs text-gray-400 mt-0.5">{10+i*3} questions</p></div></div>
+                <Badge color={i<4?"green":"yellow"}>{i<4?"Active":"Draft"}</Badge>
+              </div>
+            </div>
+          ))}
+        </div>}
+        {tab==="analytics"&&<div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold mb-4">Survey Completion Rate by Month</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={[{m:"Oct",rate:45},{m:"Nov",rate:62},{m:"Dec",rate:78},{m:"Jan",rate:85},{m:"Feb",rate:91},{m:"Mar",rate:88}]}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="m"/><YAxis/><Tooltip/>
+              <Area type="monotone" dataKey="rate" stroke="#2563eb" fill="#dbeafe" strokeWidth={2}/>
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>}
+      </div>
+    </div>
+  );
+};
+
+// 3. BROCHURE
+const BrochureModule=()=>{
+  const items=[
+    {icon:"target",title:"WEL Mandate & Vision",desc:"Overview of DTI's Workplace Experience Learning programme objectives, aligned with ILO standards.",bg:"bg-blue-50",tx:"text-blue-600"},
+    {icon:"compass",title:"Placement Process",desc:"Step-by-step guide to the 6-month placement journey from assessment to industry matching.",bg:"bg-green-50",tx:"text-green-600"},
+    {icon:"award",title:"Qualification Criteria",desc:"Requirements mapped to National TVET Qualifications Framework.",bg:"bg-purple-50",tx:"text-purple-600"},
+    {icon:"building",title:"Industry Partners",desc:"Directory of partner organisations and the mutual benefits of the WEL partnership.",bg:"bg-orange-50",tx:"text-orange-600"},
+    {icon:"trend",title:"Career Services",desc:"CV workshops, mock interviews, career counselling, and job matching services.",bg:"bg-cyan-50",tx:"text-cyan-600"},
+    {icon:"grad",title:"Transition Programmes",desc:"Entrepreneurship bootcamps, further education pathways, and CPD.",bg:"bg-red-50",tx:"text-red-600"},
+  ];
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">Transitions to Work</h2><p className="text-sm text-gray-500 mt-1">Digital brochure, career resources, and transition programmes</p></div>
+        <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="upload" size={16}/> Upload Brochure</button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {items.map((it,i)=><div key={i} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all cursor-pointer group">
+          <div className={`p-3 ${it.bg} rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform`}><I name={it.icon} className={it.tx} size={24}/></div>
+          <h3 className="font-bold text-gray-900 mb-2">{it.title}</h3>
+          <p className="text-sm text-gray-500 leading-relaxed">{it.desc}</p>
+          <div className="flex items-center gap-1 mt-4 text-blue-600 text-sm font-medium"><span>Learn more</span><I name="chevron" size={14}/></div>
+        </div>)}
+      </div>
+    </div>
+  );
+};
+
+// 4. NOTIFICATIONS
+const NotificationsModule=()=>{
+  const [showCompose,setShowCompose]=useState(false);
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">Notifications & Messaging</h2><p className="text-sm text-gray-500 mt-1">Automated alerts, bulk messaging, and communication hub</p></div>
+        <div className="flex gap-2">
+          <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm hover:bg-gray-50"><I name="mail" size={16}/> Bulk Email</button>
+          <button onClick={()=>setShowCompose(true)} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="send" size={16}/> New Message</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon="send" label="Messages Sent" value="1,247" color="blue" trend={8}/>
+        <StatCard icon="bell" label="Scheduled" value="12" color="yellow"/>
+        <StatCard icon="mail" label="Email Campaigns" value="23" color="purple"/>
+        <StatCard icon="check" label="Delivery Rate" value="98.5%" color="green"/>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="p-4 border-b border-gray-100"><h3 className="font-semibold">Notification History</h3></div>
+        <DataTable columns={[
+          {header:"Type",render:r=><Badge color={r.type==="Welcome"?"green":r.type==="Event"?"blue":r.type==="Reminder"?"yellow":"purple"}>{r.type}</Badge>},
+          {header:"Message",key:"message"},{header:"Audience",key:"audience"},{header:"Date",key:"date"},
+          {header:"Status",render:r=><Badge color={r.status==="Sent"?"green":"yellow"}>{r.status}</Badge>},
+        ]} data={NOTIFICATIONS}/>
+      </div>
+      <Modal isOpen={showCompose} onClose={()=>setShowCompose(false)} title="Compose Message">
+        <div className="space-y-4">
+          <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Audience</label>
+            <select className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm"><option>All Learners (Active)</option><option>All Alumni</option><option>Industry Partners</option><option>Specific Region</option></select></div>
+          <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Channel</label>
+            <div className="flex gap-3">{["In-App","Email","SMS","All"].map(c=><label key={c} className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"><input type="checkbox" className="rounded"/><span className="text-sm">{c}</span></label>)}</div></div>
+          <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Subject</label><input className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm" placeholder="Enter subject..."/></div>
+          <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Message</label><textarea rows={4} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm" placeholder="Type your message..."/></div>
+          <div className="flex justify-end gap-3"><button className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm">Schedule</button><button className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 flex items-center gap-2"><I name="send" size={14}/> Send Now</button></div>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+// 5. REPORTING DASHBOARD
+const ReportingModule=()=>{
+  const trendData=[{month:"Oct",placements:120,completed:0,dropped:2},{month:"Nov",placements:118,completed:0,dropped:3},{month:"Dec",placements:115,completed:0,dropped:1},{month:"Jan",placements:114,completed:5,dropped:0},{month:"Feb",placements:109,completed:8,dropped:2},{month:"Mar",placements:99,completed:15,dropped:1}];
+  const employmentData=[{batch:"2023A",employed:72,selfEmployed:12,studying:8,unemployed:8},{batch:"2023B",employed:68,selfEmployed:15,studying:10,unemployed:7},{batch:"2024A",employed:65,selfEmployed:18,studying:12,unemployed:5},{batch:"2024B",employed:70,selfEmployed:14,studying:9,unemployed:7},{batch:"2025A",employed:75,selfEmployed:10,studying:8,unemployed:7}];
+  const genderData=[{name:"Male",value:45},{name:"Female",value:55}];
+  const sectorData=[{name:"ICT",value:28},{name:"Hospitality",value:22},{name:"Fashion",value:18},{name:"Electrical",value:15},{name:"Automotive",value:10},{name:"Catering",value:7}];
+  const regionData=[{region:"Gr. Accra",count:35},{region:"Ashanti",count:22},{region:"Western",count:15},{region:"Central",count:12},{region:"Eastern",count:10},{region:"Volta",count:8}];
+
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">Reporting & Analytics</h2><p className="text-sm text-gray-500 mt-1">UNESCO-UNEVOC aligned TVET indicators</p></div>
+        <div className="flex gap-2">
+          <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm hover:bg-gray-50"><I name="download" size={16}/> PDF</button>
+          <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm hover:bg-gray-50"><I name="download" size={16}/> Excel</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold mb-4">Placement Trends</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={trendData}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="month"/><YAxis/><Tooltip/><Legend/>
+              <Line type="monotone" dataKey="placements" stroke="#2563eb" strokeWidth={2} dot={{r:4}}/>
+              <Line type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2} dot={{r:4}}/>
+              <Line type="monotone" dataKey="dropped" stroke="#ef4444" strokeWidth={2} dot={{r:4}}/>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold mb-4">Employment Outcomes by Batch (%)</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={employmentData}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="batch"/><YAxis/><Tooltip/><Legend/>
+              <Bar dataKey="employed" stackId="a" fill="#2563eb"/><Bar dataKey="selfEmployed" stackId="a" fill="#10b981"/>
+              <Bar dataKey="studying" stackId="a" fill="#f59e0b"/><Bar dataKey="unemployed" stackId="a" fill="#ef4444"/>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold mb-4">Gender Distribution</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart><Pie data={genderData} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({name,value})=>`${name}: ${value}%`}>{genderData.map((_,i)=><Cell key={i} fill={COLORS[i]}/>)}</Pie><Tooltip/></PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold mb-4">Sector Distribution</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart><Pie data={sectorData} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({name,value})=>`${name}: ${value}%`}>{sectorData.map((_,i)=><Cell key={i} fill={COLORS[i]}/>)}</Pie><Tooltip/></PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold mb-4">Regional Placements</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={regionData} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis type="number"/><YAxis dataKey="region" type="category" width={65} tick={{fontSize:11}}/><Tooltip/><Bar dataKey="count" fill="#2563eb" radius={[0,4,4,0]}/></BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="font-semibold mb-4">Key Performance Indicators (KPIs)</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[{l:"Placement Rate",v:"94%",t:"90%"},{l:"Completion Rate",v:"87%",t:"85%"},{l:"Employment Rate",v:"78%",t:"75%"},{l:"Employer Satisfaction",v:"4.2/5",t:"4.0/5"},{l:"Learner Satisfaction",v:"4.1/5",t:"4.0/5"},{l:"Dropout Rate",v:"6%",t:"<8%"},{l:"Gender Parity",v:"0.92",t:"0.90"},{l:"Partner Retention",v:"88%",t:"85%"}].map((k,i)=>(
+            <div key={i} className="p-4 rounded-xl border-2 border-green-200 bg-green-50"><p className="text-xs text-gray-500">{k.l}</p><p className="text-xl font-bold mt-1">{k.v}</p><p className="text-xs text-gray-400 mt-1">Target: {k.t}</p></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 6. LOGBOOK
+const LogbookModule=()=>{
+  const [showEntry,setShowEntry]=useState(false);
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">Digital Logbook & Evaluation</h2><p className="text-sm text-gray-500 mt-1">Daily logs, supervisor evaluations, and competency tracking</p></div>
+        <button onClick={()=>setShowEntry(true)} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="plus" size={16}/> New Entry</button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon="book" label="Total Entries" value="1,842" color="blue"/>
+        <StatCard icon="check" label="Reviewed" value="1,650" color="green"/>
+        <StatCard icon="clock" label="Pending" value="192" color="yellow"/>
+        <StatCard icon="star" label="Avg. Rating" value="3.9/5" color="purple"/>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200 mb-6">
+        <div className="p-4 border-b border-gray-100"><h3 className="font-semibold">Recent Log Entries</h3></div>
+        <DataTable columns={[
+          {header:"Date",key:"date"},{header:"Learner",key:"learner"},
+          {header:"Task",render:r=><span className="text-sm">{r.task.substring(0,50)}...</span>},
+          {header:"Hours",key:"hours"},
+          {header:"Rating",render:r=><div className="flex gap-0.5">{[1,2,3,4,5].map(s=><span key={s} style={{color:s<=r.rating?"#facc15":"#e5e7eb",fontSize:16}}>&#9733;</span>)}</div>},
+          {header:"Skills",render:r=><div className="flex gap-1 flex-wrap">{r.competencies.map(c=><Badge key={c} color="blue">{c}</Badge>)}</div>},
+        ]} data={LOG_ENTRIES}/>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="font-semibold mb-4">Skills Competency Matrix</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <RadarChart data={SKILLS_MATRIX}><PolarGrid/><PolarAngleAxis dataKey="skill" tick={{fontSize:11}}/>
+            <PolarRadiusAxis angle={30} domain={[0,100]}/>
+            <Radar name="Kwame" dataKey="kwame" stroke="#2563eb" fill="#2563eb" fillOpacity={0.15}/>
+            <Radar name="Ama" dataKey="ama" stroke="#10b981" fill="#10b981" fillOpacity={0.15}/>
+            <Radar name="Efua" dataKey="efua" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.15}/>
+            <Legend/>
+          </RadarChart>
+        </ResponsiveContainer>
+      </div>
+      <Modal isOpen={showEntry} onClose={()=>setShowEntry(false)} title="New Logbook Entry">
+        <div className="space-y-4">
+          <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Date</label><input type="date" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm" defaultValue="2026-03-17"/></div>
+          <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Tasks Performed</label><textarea rows={3} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm" placeholder="Describe daily tasks..."/></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Hours Worked</label><input type="number" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm" placeholder="8"/></div>
+            <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Key Learnings</label><input className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm" placeholder="What did you learn?"/></div>
+          </div>
+          <div className="flex justify-end gap-3"><button onClick={()=>setShowEntry(false)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm">Cancel</button><button className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium">Submit</button></div>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+// 7. INDUSTRY DIRECTORY
+const IndustryModule=()=>{
+  const [selected,setSelected]=useState(null);
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">Industry Partner Directory</h2><p className="text-sm text-gray-500 mt-1">Manage partnerships, MOUs, and capacity</p></div>
+        <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="plus" size={16}/> Add Partner</button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon="building" label="Total Partners" value={INDUSTRIES.length} color="blue"/>
+        <StatCard icon="check" label="Active MOUs" value={INDUSTRIES.filter(i=>i.mou==="Active").length} color="green"/>
+        <StatCard icon="warn" label="Expiring" value={INDUSTRIES.filter(i=>i.mou==="Expiring").length} color="yellow"/>
+        <StatCard icon="users" label="Total Capacity" value={INDUSTRIES.reduce((s,i)=>s+i.capacity,0)} color="purple"/>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {INDUSTRIES.map(ind=>(
+          <div key={ind.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer" onClick={()=>setSelected(ind)}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-700 font-bold">{ind.name.substring(0,2).toUpperCase()}</div>
+                <div><p className="font-bold text-gray-900">{ind.name}</p><p className="text-xs text-gray-400">{ind.sector}</p></div>
+              </div>
+              <Badge color={ind.mou==="Active"?"green":"yellow"}>{ind.mou}</Badge>
+            </div>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="bg-gray-50 p-2 rounded-lg"><p className="text-lg font-bold text-blue-600">{ind.capacity}</p><p className="text-xs text-gray-400">Capacity</p></div>
+              <div className="bg-gray-50 p-2 rounded-lg"><p className="text-lg font-bold text-green-600">{ind.currentInterns}</p><p className="text-xs text-gray-400">Current</p></div>
+              <div className="bg-gray-50 p-2 rounded-lg"><p className="text-lg font-bold text-yellow-600">{ind.rating}</p><p className="text-xs text-gray-400">Rating</p></div>
+            </div>
+            <div className="flex items-center gap-4 mt-3 text-xs text-gray-400"><span className="flex items-center gap-1"><I name="pin" size={12}/>{ind.region}</span><span className="flex items-center gap-1"><I name="phone" size={12}/>{ind.contact}</span></div>
+          </div>
+        ))}
+      </div>
+      <Modal isOpen={!!selected} onClose={()=>setSelected(null)} title={selected?.name||""}>
+        {selected&&<div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">{[["Sector",selected.sector],["Region",selected.region],["Contact",selected.contact],["Phone",selected.phone],["Email",selected.email],["MOU",selected.mou]].map(([l,v])=><div key={l} className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">{l}</p><p className="font-semibold mt-1">{v}</p></div>)}</div>
+          <div className="bg-blue-50 p-4 rounded-xl"><p className="text-sm font-semibold text-blue-800">Capacity Utilisation</p><div className="mt-2"><ProgressBar value={(selected.currentInterns/selected.capacity)*100} color="blue"/></div><p className="text-xs text-blue-600 mt-1">{selected.currentInterns}/{selected.capacity} slots ({Math.round(selected.currentInterns/selected.capacity*100)}%)</p></div>
+        </div>}
+      </Modal>
+    </div>
+  );
+};
+
+// 8. CV & PORTFOLIO
+const CVModule=()=>(
+  <div className="fade-in">
+    <div className="flex items-center justify-between mb-6">
+      <div><h2 className="text-xl font-bold text-gray-900">CV & Portfolio Management</h2><p className="text-sm text-gray-500 mt-1">Upload, review, and manage learner career materials</p></div>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <StatCard icon="file" label="CVs Uploaded" value="186" color="blue"/>
+      <StatCard icon="folder" label="Portfolios" value="142" color="green"/>
+      <StatCard icon="check" label="Reviewed" value="158" color="purple"/>
+      <StatCard icon="clock" label="Pending" value="28" color="yellow"/>
+    </div>
+    <div className="bg-white rounded-xl border border-gray-200">
+      <DataTable columns={[
+        {header:"Learner",render:r=><div className="flex items-center gap-3"><Avatar name={r.name}/><div><p className="font-medium">{r.name}</p><p className="text-xs text-gray-400">{r.qualification}</p></div></div>},
+        {header:"CV",render:()=><Badge color={Math.random()>0.2?"green":"red"}>{Math.random()>0.2?"Uploaded":"Missing"}</Badge>},
+        {header:"Portfolio",render:()=><Badge color={Math.random()>0.3?"green":"red"}>{Math.random()>0.3?"Uploaded":"Missing"}</Badge>},
+        {header:"Review",render:()=><Badge color={Math.random()>0.3?"green":"yellow"}>{Math.random()>0.3?"Reviewed":"Pending"}</Badge>},
+        {header:"",render:()=><div className="flex gap-2"><button className="p-1.5 hover:bg-gray-100 rounded-lg"><I name="eye" size={16} className="text-gray-400"/></button><button className="p-1.5 hover:bg-gray-100 rounded-lg"><I name="download" size={16} className="text-gray-400"/></button></div>},
+      ]} data={LEARNERS}/>
+    </div>
+  </div>
+);
+
+// 9. ISSUES LOG
+const IssuesModule=()=>{
+  const [showNew,setShowNew]=useState(false);
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">WEL Issues Log</h2><p className="text-sm text-gray-500 mt-1">Track and resolve intern issues with full audit trail</p></div>
+        <button onClick={()=>setShowNew(true)} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="plus" size={16}/> Report Issue</button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon="alert" label="Open" value={ISSUES.filter(i=>i.status==="Open").length} color="red"/>
+        <StatCard icon="clock" label="In Progress" value={ISSUES.filter(i=>i.status==="In Progress").length} color="yellow"/>
+        <StatCard icon="warn" label="Escalated" value={ISSUES.filter(i=>i.status==="Escalated").length} color="orange"/>
+        <StatCard icon="check" label="Resolved" value={ISSUES.filter(i=>i.status==="Resolved").length} color="green"/>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200">
+        <DataTable columns={[
+          {header:"ID",render:r=><span className="font-mono text-xs">ISS-{String(r.id).padStart(4,"0")}</span>},
+          {header:"Learner",key:"learner"},
+          {header:"Category",render:r=><Badge color={r.category==="Harassment"?"red":r.category==="Workplace Safety"?"orange":"blue"}>{r.category}</Badge>},
+          {header:"Priority",render:r=><Badge color={r.priority==="Critical"?"red":r.priority==="High"?"orange":r.priority==="Medium"?"yellow":"gray"}>{r.priority}</Badge>},
+          {header:"Status",render:r=><Badge color={r.status==="Resolved"?"green":r.status==="In Progress"?"yellow":r.status==="Escalated"?"red":"blue"}>{r.status}</Badge>},
+          {header:"Assigned",key:"assignedTo"},{header:"Date",key:"dateReported"},
+        ]} data={ISSUES}/>
+      </div>
+      <Modal isOpen={showNew} onClose={()=>setShowNew(false)} title="Report New Issue">
+        <div className="space-y-4">
+          <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Category</label><select className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm"><option>Workplace Safety</option><option>Supervision</option><option>Equipment</option><option>Harassment</option><option>Accessibility</option></select></div>
+          <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Priority</label><select className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></div>
+          <div><label className="text-sm font-medium text-gray-700 block mb-1.5">Description</label><textarea rows={4} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm" placeholder="Describe the issue..."/></div>
+          <div className="flex justify-end gap-3"><button onClick={()=>setShowNew(false)} className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm">Cancel</button><button className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium">Submit</button></div>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+// 10. EMPLOYMENT PORTAL
+const EmploymentModule=()=>(
+  <div className="fade-in">
+    <div className="flex items-center justify-between mb-6">
+      <div><h2 className="text-xl font-bold text-gray-900">Employment Request Portal</h2><p className="text-sm text-gray-500 mt-1">Employer requests, matching, and tracking</p></div>
+      <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="plus" size={16}/> New Request</button>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <StatCard icon="briefcase" label="Open Requests" value={EMPLOYMENT_REQUESTS.filter(r=>r.status==="Open").length} color="blue"/>
+      <StatCard icon="usercheck" label="Fulfilled" value={EMPLOYMENT_REQUESTS.filter(r=>r.status==="Fulfilled").length} color="green"/>
+      <StatCard icon="users" label="Matched" value={EMPLOYMENT_REQUESTS.reduce((s,r)=>s+r.matched,0)} color="purple"/>
+      <StatCard icon="trend" label="Fulfillment" value="82%" color="cyan" trend={5}/>
+    </div>
+    <div className="space-y-4">{EMPLOYMENT_REQUESTS.map(req=>(
+      <div key={req.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md">
+        <div className="flex items-center justify-between mb-3">
+          <div><div className="flex items-center gap-3"><h3 className="font-bold text-gray-900">{req.position}</h3><Badge color={req.status==="Open"?"blue":"green"}>{req.status}</Badge></div><p className="text-sm text-gray-500 mt-1">{req.employer} &middot; {req.count} position{req.count>1?"s":""}</p></div>
+          <div className="text-right text-sm text-gray-400"><p>Posted: {req.datePosted}</p><p>Deadline: {req.deadline}</p></div>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2 flex-wrap">{req.skills.map(s=><Badge key={s} color="gray">{s}</Badge>)}</div>
+          <div className="flex items-center gap-3"><span className="text-sm text-gray-500">{req.matched}/{req.count} matched</span><button className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100">Match</button></div>
+        </div>
+      </div>
+    ))}</div>
+  </div>
+);
+
+// 11. ALUMNI
+const AlumniModule=()=>{
+  const statusData=[{name:"Employed",value:45},{name:"Self-Employed",value:20},{name:"Studying",value:15},{name:"Unemployed",value:20}];
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">Alumni Tracking</h2><p className="text-sm text-gray-500 mt-1">Live dashboard and engagement</p></div>
+        <div className="flex gap-2">
+          <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm hover:bg-gray-50"><I name="msg" size={16}/> Bulk Message</button>
+          <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm hover:bg-gray-50"><I name="mail" size={16}/> Bulk Email</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon="grad" label="Total Alumni" value="524" color="blue"/>
+        <StatCard icon="briefcase" label="Employed" value="65%" color="green" trend={3}/>
+        <StatCard icon="zap" label="Self-Employed" value="20%" color="purple" trend={7}/>
+        <StatCard icon="book" label="Further Studies" value="15%" color="cyan"/>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold mb-4">Alumni Status</h3>
+          <DataTable columns={[
+            {header:"Name",render:r=><span className="font-medium">{r.name}</span>},
+            {header:"Batch",key:"batch"},{header:"Qualification",key:"qualification"},
+            {header:"Status",render:r=><Badge color={r.status==="Employed"?"green":r.status==="Self-Employed"?"purple":r.status==="Further Studies"?"blue":"red"}>{r.status}</Badge>},
+            {header:"Employer",key:"employer"},{header:"Role",key:"role"},
+          ]} data={ALUMNI_DATA}/>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold mb-4">Status Distribution</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart><Pie data={statusData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({name,value})=>`${name}: ${value}%`}>{statusData.map((_,i)=><Cell key={i} fill={COLORS[i]}/>)}</Pie><Tooltip/></PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 12. COMPLIANCE
+const ComplianceModule=()=>{
+  const frameworks=[
+    {name:"ILO Quality Apprenticeship Framework",areas:[{n:"Regulatory Framework",s:95},{n:"Social Dialogue",s:88},{n:"Clear Roles",s:92},{n:"Equitable Funding",s:75},{n:"Labour Market Relevance",s:90},{n:"Inclusiveness",s:85}]},
+    {name:"UNESCO-UNEVOC TVET Indicators",areas:[{n:"Access & Equity",s:90},{n:"Quality & Relevance",s:88},{n:"Governance",s:78},{n:"Labour Market Outcomes",s:85}]},
+    {name:"COTVET Ghana Standards",areas:[{n:"Curriculum Alignment",s:95},{n:"Workplace Safety",s:90},{n:"Assessment",s:92},{n:"Instructor Quals",s:88}]},
+  ];
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">Compliance & Accreditation</h2><p className="text-sm text-gray-500 mt-1">ILO, UNESCO-UNEVOC, COTVET standards tracker</p></div>
+        <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="filecheck" size={16}/> Generate Report</button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <StatCard icon="shield" label="Overall Compliance" value="92%" color="green"/>
+        <StatCard icon="award" label="Standards Met" value="18/20" color="blue"/>
+        <StatCard icon="warn" label="Action Items" value="4" color="yellow"/>
+      </div>
+      <div className="space-y-4">{frameworks.map((fw,i)=>(
+        <div key={i} className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2"><I name="shield" className="text-blue-600" size={18}/> {fw.name}</h3>
+          <div className="space-y-3">{fw.areas.map((a,j)=>(
+            <div key={j} className="flex items-center gap-4">
+              <span className="text-sm text-gray-600 w-52">{a.n}</span>
+              <div className="flex-1"><ProgressBar value={a.s} color={a.s>=85?"green":a.s>=70?"yellow":"red"} size="sm"/></div>
+              <span className="text-sm font-semibold w-12 text-right">{a.s}%</span>
+              <Badge color={a.s>=85?"green":"yellow"}>{a.s>=85?"Compliant":"Partial"}</Badge>
+            </div>
+          ))}</div>
+        </div>
+      ))}</div>
+    </div>
+  );
+};
+
+// 13. MENTORS
+const MentorModule=()=>{
+  const pairs=[
+    {mentor:"Dr. Kwesi Mensah",mentee:"Kwame Asante",area:"Software Dev",sessions:8,next:"2026-03-20",match:95},
+    {mentor:"Mrs. Abigail Owusu",mentee:"Ama Boateng",area:"Fashion",sessions:12,next:"2026-03-19",match:98},
+    {mentor:"Eng. Samuel Addo",mentee:"Kofi Mensah",area:"Electrical Eng.",sessions:6,next:"2026-03-22",match:88},
+    {mentor:"Mr. Francis Tetteh",mentee:"Efua Darkwa",area:"Hospitality",sessions:10,next:"2026-03-21",match:92},
+  ];
+  return(
+    <div className="fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div><h2 className="text-xl font-bold text-gray-900">Mentor Matching System</h2><p className="text-sm text-gray-500 mt-1">AI-powered mentor-mentee matching</p></div>
+        <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="adduser" size={16}/> Register Mentor</button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon="heart" label="Active Mentors" value="42" color="red"/>
+        <StatCard icon="users" label="Active Pairs" value="38" color="blue"/>
+        <StatCard icon="star" label="Satisfaction" value="4.6/5" color="yellow"/>
+        <StatCard icon="trend" label="Improved Outcomes" value="+23%" color="green"/>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{pairs.map((p,i)=>(
+        <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md">
+          <div className="flex items-center justify-between mb-3"><Badge color="green">{p.match}% Match</Badge><span className="text-xs text-gray-400">Next: {p.next}</span></div>
+          <div className="flex items-center gap-4">
+            <div className="text-center"><Avatar name={p.mentor}/><p className="text-xs font-medium mt-1">{p.mentor}</p><p className="text-xs text-gray-400">Mentor</p></div>
+            <I name="arrow" className="text-gray-300"/>
+            <div className="text-center"><Avatar name={p.mentee}/><p className="text-xs font-medium mt-1">{p.mentee}</p><p className="text-xs text-gray-400">Mentee</p></div>
+          </div>
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100"><span className="text-sm text-gray-500">{p.area}</span><span className="text-sm text-gray-400">{p.sessions} sessions</span></div>
+        </div>
+      ))}</div>
+    </div>
+  );
+};
+
+// ===== DASHBOARD =====
+const Dashboard=()=>(
+  <div className="fade-in">
+    <div className="mb-6"><h2 className="text-xl font-bold text-gray-900">WEL Administration Dashboard</h2><p className="text-sm text-gray-500 mt-1">{new Date().toLocaleDateString("en-GB",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</p></div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <StatCard icon="users" label="Active Learners" value="198" color="blue" trend={5} sub="Across 6 industries"/>
+      <StatCard icon="building" label="Industry Partners" value="42" color="green" trend={12} sub="3 new this quarter"/>
+      <StatCard icon="check" label="Completion Rate" value="87%" color="purple" trend={3} sub="Above target"/>
+      <StatCard icon="briefcase" label="Employment Rate" value="78%" color="orange" trend={7} sub="6mo post-WEL"/>
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="font-semibold mb-4">Placements by Sector</h3>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={[{s:"ICT",a:28,c:12,d:2},{s:"Hospitality",a:22,c:8,d:1},{s:"Fashion",a:18,c:6,d:1},{s:"Electrical",a:15,c:5,d:2},{s:"Automotive",a:10,c:4,d:1},{s:"Catering",a:7,c:3,d:0}]}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="s"/><YAxis/><Tooltip/><Legend/>
+            <Bar dataKey="a" name="Active" fill="#2563eb" radius={[4,4,0,0]}/><Bar dataKey="c" name="Completed" fill="#10b981" radius={[4,4,0,0]}/><Bar dataKey="d" name="Dropped" fill="#ef4444" radius={[4,4,0,0]}/>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="font-semibold mb-4">Monthly Engagement</h3>
+        <ResponsiveContainer width="100%" height={250}>
+          <AreaChart data={[{m:"Oct",log:450,srv:120,iss:15},{m:"Nov",log:520,srv:85,iss:12},{m:"Dec",log:380,srv:60,iss:8},{m:"Jan",log:580,srv:140,iss:18},{m:"Feb",log:620,srv:95,iss:10},{m:"Mar",log:590,srv:110,iss:14}]}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="m"/><YAxis/><Tooltip/><Legend/>
+            <Area type="monotone" dataKey="log" name="Logbook" stroke="#2563eb" fill="#dbeafe" strokeWidth={2}/>
+            <Area type="monotone" dataKey="srv" name="Surveys" stroke="#10b981" fill="#d1fae5" strokeWidth={2}/>
+            <Area type="monotone" dataKey="iss" name="Issues" stroke="#ef4444" fill="#fee2e2" strokeWidth={2}/>
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="font-semibold mb-4 flex items-center gap-2"><I name="alert" className="text-red-500" size={18}/> Recent Issues</h3>
+        <div className="space-y-3">{ISSUES.slice(0,3).map(iss=><div key={iss.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"><Badge color={iss.priority==="Critical"?"red":"orange"}>{iss.priority}</Badge><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{iss.description}</p><p className="text-xs text-gray-400">{iss.learner}</p></div></div>)}</div>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="font-semibold mb-4 flex items-center gap-2"><I name="bell" className="text-blue-500" size={18}/> Notifications</h3>
+        <div className="space-y-3">{NOTIFICATIONS.slice(0,3).map(n=><div key={n.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"><Badge color={n.type==="Event"?"blue":n.type==="Reminder"?"yellow":"green"}>{n.type}</Badge><div className="flex-1 min-w-0"><p className="text-sm truncate">{n.message}</p><p className="text-xs text-gray-400">{n.date}</p></div></div>)}</div>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="font-semibold mb-4 flex items-center gap-2"><I name="briefcase" className="text-green-500" size={18}/> Job Requests</h3>
+        <div className="space-y-3">{EMPLOYMENT_REQUESTS.map(r=><div key={r.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"><Badge color={r.status==="Open"?"blue":"green"}>{r.status}</Badge><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{r.position}</p><p className="text-xs text-gray-400">{r.employer}</p></div></div>)}</div>
+      </div>
+    </div>
+  </div>
+);
+
+// ===== ROLES & NAVIGATION =====
+const ROLES=[
+  {id:"admin",label:"WEL Administrator",icon:"shield",desc:"Full system access",bg:"bg-blue-50",tx:"text-blue-600"},
+  {id:"learner",label:"Learner / Intern",icon:"grad",desc:"Logbook, CV, issues",bg:"bg-green-50",tx:"text-green-600"},
+  {id:"supervisor",label:"Industry Supervisor",icon:"briefcase",desc:"Evaluate learners",bg:"bg-purple-50",tx:"text-purple-600"},
+  {id:"leadership",label:"DTI Leadership",icon:"chart",desc:"KPIs & compliance",bg:"bg-orange-50",tx:"text-orange-600"},
+  {id:"employer",label:"Employer",icon:"building",desc:"Hire candidates",bg:"bg-cyan-50",tx:"text-cyan-600"},
+  {id:"alumni",label:"Alumni",icon:"award",desc:"Career services",bg:"bg-red-50",tx:"text-red-600"},
+];
+
+const NAV={
+  admin:[{id:"dashboard",label:"Dashboard",icon:"home"},{id:"placements",label:"Placements",icon:"users"},{id:"surveys",label:"Surveys",icon:"clipboard"},{id:"brochure",label:"Transitions",icon:"compass"},{id:"notifications",label:"Notifications",icon:"bell"},{id:"reporting",label:"Reports & KPIs",icon:"chart"},{id:"logbook",label:"Digital Logbook",icon:"book"},{id:"industry",label:"Industry Partners",icon:"building"},{id:"cv",label:"CV & Portfolios",icon:"file"},{id:"issues",label:"Issues Log",icon:"alert"},{id:"employment",label:"Employment Portal",icon:"briefcase"},{id:"alumni",label:"Alumni Tracker",icon:"grad"},{id:"compliance",label:"Compliance",icon:"shield"},{id:"mentors",label:"Mentor Matching",icon:"heart"}],
+  learner:[{id:"dashboard",label:"My Dashboard",icon:"home"},{id:"logbook",label:"My Logbook",icon:"book"},{id:"cv",label:"My CV",icon:"file"},{id:"issues",label:"Report Issue",icon:"alert"},{id:"brochure",label:"Career Resources",icon:"compass"},{id:"notifications",label:"Notifications",icon:"bell"},{id:"mentors",label:"My Mentor",icon:"heart"}],
+  supervisor:[{id:"dashboard",label:"Dashboard",icon:"home"},{id:"logbook",label:"Review Logbooks",icon:"book"},{id:"placements",label:"My Interns",icon:"users"},{id:"issues",label:"Issues",icon:"alert"},{id:"reporting",label:"Performance",icon:"chart"}],
+  leadership:[{id:"dashboard",label:"Executive Dashboard",icon:"home"},{id:"reporting",label:"Reports & KPIs",icon:"chart"},{id:"compliance",label:"Compliance",icon:"shield"},{id:"alumni",label:"Alumni Outcomes",icon:"grad"},{id:"employment",label:"Employment",icon:"briefcase"},{id:"industry",label:"Partners",icon:"building"}],
+  employer:[{id:"dashboard",label:"Dashboard",icon:"home"},{id:"employment",label:"My Requests",icon:"briefcase"},{id:"cv",label:"Candidates",icon:"users"},{id:"industry",label:"Partnership",icon:"building"}],
+  alumni:[{id:"dashboard",label:"My Dashboard",icon:"home"},{id:"brochure",label:"Career Services",icon:"compass"},{id:"employment",label:"Opportunities",icon:"briefcase"},{id:"notifications",label:"Messages",icon:"bell"}],
+};
+
+// ===== MAIN APP =====
+function App(){
+  const [role,setRole]=useState(null);
+  const [mod,setMod]=useState("dashboard");
+  const [sidebarOpen,setSidebarOpen]=useState(true);
+
+  if(!role){
+    return(
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4 sm:p-8">
+        <div className="max-w-4xl w-full">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-lg shadow-blue-200 mb-4"><I name="grad" className="text-white" size={36}/></div>
+            <h1 className="text-3xl sm:text-4xl font-black text-gray-900">DTI WEL System</h1>
+            <p className="text-gray-500 mt-2 text-lg">Workplace Experience Learning Platform</p>
+            <p className="text-sm text-gray-400 mt-1">Design & Technology Institute</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {ROLES.map(r=>(
+              <button key={r.id} onClick={()=>{setRole(r.id);setMod("dashboard");}} className="bg-white rounded-2xl border-2 border-gray-100 p-6 hover:border-blue-300 hover:shadow-xl transition-all text-left group">
+                <div className={`p-3 ${r.bg} rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform`}><I name={r.icon} className={r.tx} size={28}/></div>
+                <h3 className="font-bold text-gray-900 text-lg">{r.label}</h3>
+                <p className="text-sm text-gray-400 mt-1">{r.desc}</p>
+              </button>
+            ))}
+          </div>
+          <p className="text-center text-xs text-gray-300 mt-8">ILO &middot; UNESCO-UNEVOC &middot; COTVET Aligned</p>
+        </div>
+      </div>
+    );
+  }
+
+  const nav=NAV[role]||NAV.admin;
+  const cur=ROLES.find(r=>r.id===role);
+  const renderModule=()=>{
+    switch(mod){
+      case"dashboard":return <Dashboard/>;case"placements":return <PlacementModule/>;case"surveys":return <SurveyModule/>;
+      case"brochure":return <BrochureModule/>;case"notifications":return <NotificationsModule/>;case"reporting":return <ReportingModule/>;
+      case"logbook":return <LogbookModule/>;case"industry":return <IndustryModule/>;case"cv":return <CVModule/>;
+      case"issues":return <IssuesModule/>;case"employment":return <EmploymentModule/>;case"alumni":return <AlumniModule/>;
+      case"compliance":return <ComplianceModule/>;case"mentors":return <MentorModule/>;
+      default:return <Dashboard/>;
+    }
+  };
+
+  return(
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <div className={`${sidebarOpen?"w-60":"w-16"} bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shrink-0 fixed h-full z-40 lg:relative`}>
+        <div className="p-3 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shrink-0"><I name="grad" className="text-white" size={22}/></div>
+            {sidebarOpen&&<div><p className="font-bold text-gray-900 text-sm">DTI WEL</p><p className="text-xs text-gray-400">{cur?.label}</p></div>}
+          </div>
+        </div>
+        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto sidebar-scroll">
+          {nav.map(item=>(
+            <button key={item.id} onClick={()=>setMod(item.id)} className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${mod===item.id?"bg-blue-50 text-blue-700 font-semibold":"text-gray-600 hover:bg-gray-50"}`}>
+              <I name={item.icon} className={mod===item.id?"text-blue-600":"text-gray-400"} size={18}/>{sidebarOpen&&<span>{item.label}</span>}
+            </button>
+          ))}
+        </nav>
+        <div className="p-2 border-t border-gray-100 space-y-0.5">
+          <button onClick={()=>setSidebarOpen(!sidebarOpen)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50"><I name="menu" className="text-gray-400" size={18}/>{sidebarOpen&&<span>Toggle</span>}</button>
+          <button onClick={()=>{setRole(null);setMod("dashboard");}} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50"><I name="logout" className="text-gray-400" size={18}/>{sidebarOpen&&<span>Switch Role</span>}</button>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div className={`flex-1 flex flex-col min-w-0 ${sidebarOpen?"lg:ml-0 ml-60":""}`}>
+        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
+          <div className="relative w-48 sm:w-72"><I name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16}/><input placeholder="Search..." className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
+          <div className="flex items-center gap-3">
+            <button className="relative p-2 hover:bg-gray-100 rounded-xl"><I name="bell" className="text-gray-500" size={20}/><span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"/></button>
+            <div className="flex items-center gap-2 pl-3 border-l border-gray-200"><div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">TO</div><span className="text-sm font-medium text-gray-700 hidden sm:inline">Tamatey O.</span></div>
+          </div>
+        </header>
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto">{renderModule()}</main>
+        <footer className="bg-white border-t border-gray-200 px-6 py-2 text-center shrink-0"><p className="text-xs text-gray-400">DTI WEL System &middot; ILO &middot; UNESCO-UNEVOC &middot; COTVET &middot; &copy; 2026</p></footer>
+      </div>
+    </div>
+  );
+}
+
+const root=ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App));
+</script>
+</body>
+</html>
