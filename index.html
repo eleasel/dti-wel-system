@@ -79,12 +79,12 @@ const LEARNERS=[
 ];
 
 const INDUSTRIES=[
-  {id:1,name:"TechCorp Ghana",sector:"ICT",region:"Greater Accra",contact:"Mr. Agyeman",phone:"+233 30 255 1001",email:"hr@techcorp.gh",capacity:15,currentInterns:8,rating:4.5,mou:"Active"},
-  {id:2,name:"StyleHouse Ltd",sector:"Fashion",region:"Ashanti",contact:"Mrs. Owusu",phone:"+233 32 205 1002",email:"training@stylehouse.gh",capacity:10,currentInterns:6,rating:4.8,mou:"Active"},
-  {id:3,name:"PowerGrid Solutions",sector:"Electrical",region:"Western",contact:"Eng. Addo",phone:"+233 31 204 1003",email:"hr@powergrid.gh",capacity:12,currentInterns:5,rating:4.2,mou:"Active"},
-  {id:4,name:"Golden Tulip Hotel",sector:"Hospitality",region:"Greater Accra",contact:"Mr. Tetteh",phone:"+233 30 263 1004",email:"training@goldentulip.gh",capacity:20,currentInterns:12,rating:4.6,mou:"Active"},
-  {id:5,name:"Japan Motors",sector:"Automotive",region:"Greater Accra",contact:"Mr. Appiah",phone:"+233 30 221 1005",email:"hr@japanmotors.gh",capacity:8,currentInterns:4,rating:4.0,mou:"Expiring"},
-  {id:6,name:"Papaye Fast Food",sector:"Catering",region:"Greater Accra",contact:"Chef Adu",phone:"+233 30 277 1006",email:"ops@papaye.gh",capacity:10,currentInterns:7,rating:3.9,mou:"Active"},
+  {id:1,name:"TechCorp Ghana",sector:"ICT",region:"Greater Accra",contact:"Mr. Agyeman",phone:"+233 30 255 1001",email:"hr@techcorp.gh",website:"https://techcorp.gh",founded:2008,yearsOperation:17,capacity:15,currentInterns:8,rating:4.5,mou:"Active",mouExpiry:"2027-06-30",logoColor:"#2563eb",logoText:"TC"},
+  {id:2,name:"StyleHouse Ltd",sector:"Fashion",region:"Ashanti",contact:"Mrs. Owusu",phone:"+233 32 205 1002",email:"training@stylehouse.gh",website:"https://stylehouse.gh",founded:2015,yearsOperation:10,capacity:10,currentInterns:6,rating:4.8,mou:"Active",mouExpiry:"2027-03-31",logoColor:"#ec4899",logoText:"SH"},
+  {id:3,name:"PowerGrid Solutions",sector:"Electrical",region:"Western",contact:"Eng. Addo",phone:"+233 31 204 1003",email:"hr@powergrid.gh",website:"https://powergrid.gh",founded:2010,yearsOperation:15,capacity:12,currentInterns:5,rating:4.2,mou:"Active",mouExpiry:"2026-12-31",logoColor:"#f59e0b",logoText:"PG"},
+  {id:4,name:"Golden Tulip Hotel",sector:"Hospitality",region:"Greater Accra",contact:"Mr. Tetteh",phone:"+233 30 263 1004",email:"training@goldentulip.gh",website:"https://goldentulip.com",founded:1995,yearsOperation:30,capacity:20,currentInterns:12,rating:4.6,mou:"Active",mouExpiry:"2028-01-31",logoColor:"#d97706",logoText:"GT"},
+  {id:5,name:"Japan Motors",sector:"Automotive",region:"Greater Accra",contact:"Mr. Appiah",phone:"+233 30 221 1005",email:"hr@japanmotors.gh",website:"https://japanmotors.gh",founded:2001,yearsOperation:24,capacity:8,currentInterns:4,rating:4.0,mou:"Expiring",mouExpiry:"2026-06-30",logoColor:"#ef4444",logoText:"JM"},
+  {id:6,name:"Papaye Fast Food",sector:"Catering",region:"Greater Accra",contact:"Chef Adu",phone:"+233 30 277 1006",email:"ops@papaye.gh",website:"https://papaye.com.gh",founded:1992,yearsOperation:33,capacity:10,currentInterns:7,rating:3.9,mou:"Active",mouExpiry:"2027-09-30",logoColor:"#10b981",logoText:"PF"},
 ];
 
 const ISSUES=[
@@ -215,18 +215,25 @@ const PlacementModule=()=>{
     <div className="fade-in">
       <div className="flex items-center justify-between mb-6">
         <div><h2 className="text-xl font-bold text-gray-900">Learner Placement Management</h2><p className="text-sm text-gray-500 mt-1">Track and manage all internship placements</p></div>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="plus" size={16}/> New Placement</button>
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50"><I name="upload" size={16}/> Bulk Upload</button>
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="adduser" size={16}/> New Profile</button>
+        </div>
       </div>
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="flex-1 min-w-[200px]"><SearchBar value={search} onChange={setSearch} placeholder="Search learner or industry..."/></div>
         <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">{statuses.map(s=><option key={s}>{s}</option>)}</select>
         <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50"><I name="download" size={16}/> Export</button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         <StatCard icon="users" label="Total Learners" value={LEARNERS.length} color="blue"/>
         <StatCard icon="check" label="Active" value={LEARNERS.filter(l=>l.status==="Active").length} color="green"/>
         <StatCard icon="award" label="Completed" value={LEARNERS.filter(l=>l.status==="Completed").length} color="purple"/>
-        <StatCard icon="warn" label="Dropouts" value={LEARNERS.filter(l=>l.status==="Dropped").length} color="red"/>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatCard icon="warn" label="Dropouts" value={LEARNERS.filter(l=>l.status==="Dropped").length} color="red" sub="Left programme early"/>
+        <StatCard icon="shield" label="Retained" value={LEARNERS.filter(l=>l.status!=="Dropped").length} color="cyan" sub={`of ${LEARNERS.length} total enrolled`}/>
+        <StatCard icon="trend" label="Retention Rate" value={`${Math.round((LEARNERS.filter(l=>l.status!=="Dropped").length/LEARNERS.length)*100)}%`} color="green" trend={2} sub="Industry benchmark: 80%"/>
       </div>
       <div className="bg-white rounded-xl border border-gray-200">
         <DataTable columns={[
@@ -505,42 +512,341 @@ const LogbookModule=()=>{
 // 7. INDUSTRY DIRECTORY
 const IndustryModule=()=>{
   const [selected,setSelected]=useState(null);
+  const [tab,setTab]=useState("partners");
+  const [uploadState,setUploadState]=useState("idle");
+  const [previewRows,setPreviewRows]=useState([]);
+  const [showAddForm,setShowAddForm]=useState(false);
+  const [partners,setPartners]=useState(INDUSTRIES);
+  const [newPartner,setNewPartner]=useState({name:"",sector:"",region:"",contact:"",phone:"",email:"",website:"",founded:"",capacity:"",mou:"Active"});
+  const fileUploadRef=useRef(null);
+
+  const SECTORS=["ICT","Fashion","Electrical","Hospitality","Automotive","Catering","Healthcare","Construction","Finance","Education","Agriculture","Manufacturing","Retail","Media","Logistics"];
+  const REGIONS=["Greater Accra","Ashanti","Western","Central","Eastern","Volta","Northern","Upper East","Upper West","Bono","Ahafo","Bono East","Oti","Savannah","North East","Western North"];
+
+  const handleAddPartner=()=>{
+    if(!newPartner.name||!newPartner.sector||!newPartner.region)return;
+    const initials=newPartner.name.split(" ").map(w=>w[0]).join("").substring(0,2).toUpperCase();
+    const colors=["#2563eb","#ec4899","#f59e0b","#10b981","#8b5cf6","#06b6d4","#ef4444","#d97706"];
+    const logoColor=colors[partners.length%colors.length];
+    const founded=parseInt(newPartner.founded)||2020;
+    setPartners(prev=>[...prev,{
+      id:prev.length+1,name:newPartner.name,sector:newPartner.sector,region:newPartner.region,
+      contact:newPartner.contact,phone:newPartner.phone,email:newPartner.email,
+      website:newPartner.website,founded,yearsOperation:new Date().getFullYear()-founded,
+      capacity:parseInt(newPartner.capacity)||5,currentInterns:0,rating:0,
+      mou:newPartner.mou,mouExpiry:"",logoColor,logoText:initials,
+    }]);
+    setNewPartner({name:"",sector:"",region:"",contact:"",phone:"",email:"",website:"",founded:"",capacity:"",mou:"Active"});
+    setShowAddForm(false);
+  };
+
+  const TEMPLATE_COLS=["Organisation Name","Sector","Region","District","Contact Person","Phone","Email","Intern Capacity","MOU Status","MOU Expiry Date"];
+
+  const handleFileSelect=(e)=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    // Simulate parsing — show preview rows
+    setPreviewRows([
+      {name:"Volta River Authority",sector:"Energy",region:"Greater Accra",district:"Accra Metro",contact:"Eng. Asante",phone:"+233 30 266 1200",email:"hr@vra.com",capacity:20,mou:"Active",expiry:"2027-06-30"},
+      {name:"Ghana Broadcasting Corp",sector:"Media",region:"Greater Accra",district:"Accra Metro",contact:"Ms. Ama Kusi",phone:"+233 30 221 5678",email:"training@gbc.gh",capacity:10,mou:"Active",expiry:"2026-12-31"},
+      {name:"Accra Brewery Ltd",sector:"Manufacturing",region:"Greater Accra",district:"Accra Metro",contact:"Mr. Kweku Baah",phone:"+233 30 250 9900",email:"hr@abl.gh",capacity:15,mou:"Pending",expiry:""},
+    ]);
+    setUploadState("preview");
+  };
+
+  const handleImport=()=>{
+    setUploadState("success");
+  };
+
+  const handleReset=()=>{
+    setUploadState("idle");
+    setPreviewRows([]);
+    if(fileUploadRef.current)fileUploadRef.current.value="";
+  };
+
   return(
     <div className="fade-in">
       <div className="flex items-center justify-between mb-6">
         <div><h2 className="text-xl font-bold text-gray-900">Industry Partner Directory</h2><p className="text-sm text-gray-500 mt-1">Manage partnerships, MOUs, and capacity</p></div>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="plus" size={16}/> Add Partner</button>
+        <button onClick={()=>setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="plus" size={16}/> Add Partner</button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon="building" label="Total Partners" value={INDUSTRIES.length} color="blue"/>
-        <StatCard icon="check" label="Active MOUs" value={INDUSTRIES.filter(i=>i.mou==="Active").length} color="green"/>
-        <StatCard icon="warn" label="Expiring" value={INDUSTRIES.filter(i=>i.mou==="Expiring").length} color="yellow"/>
-        <StatCard icon="users" label="Total Capacity" value={INDUSTRIES.reduce((s,i)=>s+i.capacity,0)} color="purple"/>
+
+      {/* Tab navigation */}
+      <div className="mb-6">
+        <TabNav tabs={[{id:"partners",label:"Partners"},{id:"bulk",label:"Bulk Upload"}]} active={tab} onChange={setTab}/>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {INDUSTRIES.map(ind=>(
-          <div key={ind.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer" onClick={()=>setSelected(ind)}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-700 font-bold">{ind.name.substring(0,2).toUpperCase()}</div>
-                <div><p className="font-bold text-gray-900">{ind.name}</p><p className="text-xs text-gray-400">{ind.sector}</p></div>
+
+      {tab==="partners"&&<>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard icon="building" label="Total Partners" value={partners.length} color="blue"/>
+          <StatCard icon="check" label="Active MOUs" value={partners.filter(i=>i.mou==="Active").length} color="green"/>
+          <StatCard icon="warn" label="Expiring" value={partners.filter(i=>i.mou==="Expiring").length} color="yellow"/>
+          <StatCard icon="users" label="Total Capacity" value={partners.reduce((s,i)=>s+i.capacity,0)} color="purple"/>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {partners.map(ind=>(
+            <div key={ind.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow cursor-pointer group" onClick={()=>setSelected(ind)}>
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  {/* Company Logo */}
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-black text-lg shrink-0 shadow-sm" style={{background:ind.logoColor||"#2563eb"}}>
+                    {ind.logoText||ind.name.substring(0,2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{ind.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{ind.sector}</p>
+                    {ind.website&&(
+                      <a href={ind.website} target="_blank" rel="noopener noreferrer"
+                        onClick={e=>e.stopPropagation()}
+                        className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1 mt-0.5">
+                        <I name="globe" size={11}/>{ind.website.replace("https://","")}
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1.5">
+                  <Badge color={ind.mou==="Active"?"green":ind.mou==="Expiring"?"yellow":"red"}>{ind.mou}</Badge>
+                  {ind.yearsOperation&&<span className="text-xs text-gray-400">{ind.yearsOperation} yrs operating</span>}
+                </div>
               </div>
-              <Badge color={ind.mou==="Active"?"green":"yellow"}>{ind.mou}</Badge>
+              <div className="grid grid-cols-3 gap-2 text-center mt-3">
+                <div className="bg-gray-50 p-2 rounded-lg"><p className="text-lg font-bold text-blue-600">{ind.capacity}</p><p className="text-xs text-gray-400">Capacity</p></div>
+                <div className="bg-gray-50 p-2 rounded-lg"><p className="text-lg font-bold text-green-600">{ind.currentInterns}</p><p className="text-xs text-gray-400">Current</p></div>
+                <div className="bg-gray-50 p-2 rounded-lg"><p className="text-lg font-bold text-yellow-600">{ind.rating||"—"}</p><p className="text-xs text-gray-400">Rating</p></div>
+              </div>
+              <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
+                <span className="flex items-center gap-1"><I name="pin" size={11}/>{ind.region}</span>
+                <span className="flex items-center gap-1"><I name="person" size={11}/>{ind.contact}</span>
+                {ind.founded&&<span className="flex items-center gap-1"><I name="calendar" size={11}/>Est. {ind.founded}</span>}
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="bg-gray-50 p-2 rounded-lg"><p className="text-lg font-bold text-blue-600">{ind.capacity}</p><p className="text-xs text-gray-400">Capacity</p></div>
-              <div className="bg-gray-50 p-2 rounded-lg"><p className="text-lg font-bold text-green-600">{ind.currentInterns}</p><p className="text-xs text-gray-400">Current</p></div>
-              <div className="bg-gray-50 p-2 rounded-lg"><p className="text-lg font-bold text-yellow-600">{ind.rating}</p><p className="text-xs text-gray-400">Rating</p></div>
+          ))}
+        </div>
+      </>}
+
+      {tab==="bulk"&&<div className="space-y-6">
+        {/* Step indicator */}
+        <div className="flex items-center gap-2">
+          {["Prepare File","Upload & Preview","Confirm Import"].map((s,i)=>(
+            <React.Fragment key={i}>
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                (uploadState==="idle"&&i===0)||(uploadState==="preview"&&i===1)||(uploadState==="success"&&i===2)
+                  ?"bg-blue-600 text-white"
+                  :(uploadState==="preview"&&i===0)||(uploadState==="success"&&i<=1)
+                    ?"bg-green-100 text-green-700"
+                    :"bg-gray-100 text-gray-400"
+              }`}>
+                {((uploadState==="preview"&&i===0)||(uploadState==="success"&&i<=1))
+                  ?<I name="check" size={12}/>
+                  :<span>{i+1}</span>
+                }
+                <span>{s}</span>
+              </div>
+              {i<2&&<div className="flex-1 h-px bg-gray-200"/>}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Step 1 — Prepare */}
+        {uploadState==="idle"&&<>
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 rounded-xl mt-0.5"><I name="file" className="text-blue-600" size={18}/></div>
+              <div>
+                <p className="font-semibold text-blue-900">Download the template first</p>
+                <p className="text-sm text-blue-700 mt-1">Use the official DTI template to ensure your data imports correctly. Fill in all required columns before uploading.</p>
+                <button className="mt-3 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">
+                  <I name="download" size={15}/> Download Excel Template
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-4 mt-3 text-xs text-gray-400"><span className="flex items-center gap-1"><I name="pin" size={12}/>{ind.region}</span><span className="flex items-center gap-1"><I name="phone" size={12}/>{ind.contact}</span></div>
           </div>
-        ))}
-      </div>
-      <Modal isOpen={!!selected} onClose={()=>setSelected(null)} title={selected?.name||""}>
-        {selected&&<div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">{[["Sector",selected.sector],["Region",selected.region],["Contact",selected.contact],["Phone",selected.phone],["Email",selected.email],["MOU",selected.mou]].map(([l,v])=><div key={l} className="bg-gray-50 p-3 rounded-xl"><p className="text-xs text-gray-500">{l}</p><p className="font-semibold mt-1">{v}</p></div>)}</div>
-          <div className="bg-blue-50 p-4 rounded-xl"><p className="text-sm font-semibold text-blue-800">Capacity Utilisation</p><div className="mt-2"><ProgressBar value={(selected.currentInterns/selected.capacity)*100} color="blue"/></div><p className="text-xs text-blue-600 mt-1">{selected.currentInterns}/{selected.capacity} slots ({Math.round(selected.currentInterns/selected.capacity*100)}%)</p></div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <p className="text-sm font-semibold text-gray-700 mb-3">Required columns in your file:</p>
+            <div className="flex flex-wrap gap-2">
+              {TEMPLATE_COLS.map((c,i)=>(
+                <span key={i} className={`px-3 py-1 rounded-full text-xs font-medium ${i<6?"bg-red-50 text-red-700 border border-red-100":"bg-gray-50 text-gray-500 border border-gray-100"}`}>
+                  {i<6&&<span className="mr-1">*</span>}{c}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-3"><span className="text-red-500 font-semibold">* Required</span> — all other fields are optional</p>
+          </div>
+
+          <div
+            className="border-2 border-dashed border-gray-300 rounded-2xl p-10 text-center hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer"
+            onClick={()=>fileUploadRef.current?.click()}
+          >
+            <I name="upload" className="text-gray-300 mx-auto mb-3" size={40}/>
+            <p className="font-semibold text-gray-700">Click to upload your file</p>
+            <p className="text-sm text-gray-400 mt-1">Supports .xlsx, .xls, .csv — max 10MB</p>
+            <button className="mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">Choose File</button>
+            <input ref={fileUploadRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFileSelect}/>
+          </div>
+        </>}
+
+        {/* Step 2 — Preview */}
+        {uploadState==="preview"&&<>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-xl"><I name="filecheck" className="text-green-600" size={18}/></div>
+              <div><p className="font-semibold text-gray-900">File uploaded successfully</p><p className="text-sm text-gray-500">{previewRows.length} records detected — review before importing</p></div>
+            </div>
+            <button onClick={handleReset} className="text-sm text-gray-400 hover:text-gray-600 underline">Upload different file</button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+              <p className="text-sm font-semibold text-gray-700">Preview ({previewRows.length} rows)</p>
+              <Badge color="yellow">Review Required</Badge>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="border-b border-gray-100">{["Organisation","Sector","Region","Contact","Capacity","MOU Status"].map(h=><th key={h} className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>)}</tr></thead>
+                <tbody>{previewRows.map((r,i)=>(
+                  <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="py-3 px-4 font-medium text-gray-900">{r.name}</td>
+                    <td className="py-3 px-4 text-gray-600">{r.sector}</td>
+                    <td className="py-3 px-4 text-gray-600">{r.region}</td>
+                    <td className="py-3 px-4 text-gray-600">{r.contact}</td>
+                    <td className="py-3 px-4 text-gray-600">{r.capacity}</td>
+                    <td className="py-3 px-4"><Badge color={r.mou==="Active"?"green":r.mou==="Pending"?"yellow":"red"}>{r.mou}</Badge></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end">
+            <button onClick={handleReset} className="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50">Cancel</button>
+            <button onClick={handleImport} className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700"><I name="check" size={15}/> Confirm & Import {previewRows.length} Partners</button>
+          </div>
+        </>}
+
+        {/* Step 3 — Success */}
+        {uploadState==="success"&&<div className="text-center py-14">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5"><I name="check" className="text-green-600" size={36}/></div>
+          <h3 className="text-xl font-bold text-gray-900">Import Successful!</h3>
+          <p className="text-gray-500 mt-2">{previewRows.length} industry partners have been added to the directory.</p>
+          <div className="flex gap-3 justify-center mt-6">
+            <button onClick={handleReset} className="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50">Upload Another File</button>
+            <button onClick={()=>setTab("partners")} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700"><I name="building" size={15}/> View All Partners</button>
+          </div>
         </div>}
+      </div>}
+
+      {/* Partner Detail Modal */}
+      <Modal isOpen={!!selected} onClose={()=>setSelected(null)} title="">
+        {selected&&<div className="space-y-5">
+          {/* Header with logo */}
+          <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-xl shrink-0 shadow" style={{background:selected.logoColor||"#2563eb"}}>
+              {selected.logoText||selected.name.substring(0,2).toUpperCase()}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-black text-gray-900">{selected.name}</h3>
+              <p className="text-sm text-gray-400">{selected.sector} &middot; {selected.region}</p>
+              {selected.website&&<a href={selected.website} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:text-blue-700 flex items-center gap-1 mt-1"><I name="globe" size={13}/>{selected.website}</a>}
+            </div>
+            <Badge color={selected.mou==="Active"?"green":selected.mou==="Expiring"?"yellow":"red"}>{selected.mou} MOU</Badge>
+          </div>
+          {/* Key stats row */}
+          <div className="grid grid-cols-4 gap-3 text-center">
+            <div className="bg-blue-50 p-3 rounded-xl"><p className="text-xl font-black text-blue-700">{selected.capacity}</p><p className="text-xs text-blue-500">Capacity</p></div>
+            <div className="bg-green-50 p-3 rounded-xl"><p className="text-xl font-black text-green-700">{selected.currentInterns}</p><p className="text-xs text-green-500">Active Interns</p></div>
+            <div className="bg-yellow-50 p-3 rounded-xl"><p className="text-xl font-black text-yellow-700">{selected.rating||"—"}</p><p className="text-xs text-yellow-500">Rating</p></div>
+            <div className="bg-purple-50 p-3 rounded-xl"><p className="text-xl font-black text-purple-700">{selected.yearsOperation||"—"}</p><p className="text-xs text-purple-500">Yrs Operating</p></div>
+          </div>
+          {/* Details grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              ["Contact Person",selected.contact],
+              ["Phone",selected.phone],
+              ["Email",selected.email],
+              ["Founded",selected.founded?`${selected.founded} (${selected.yearsOperation} years)`:"—"],
+              ["MOU Status",selected.mou],
+              ["MOU Expiry",selected.mouExpiry||"—"],
+            ].map(([l,v])=>(
+              <div key={l} className="bg-gray-50 p-3 rounded-xl">
+                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">{l}</p>
+                <p className="font-semibold text-gray-800 mt-0.5 text-sm">{v}</p>
+              </div>
+            ))}
+          </div>
+          {/* Capacity bar */}
+          <div className="bg-blue-50 p-4 rounded-xl">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-sm font-semibold text-blue-800">Capacity Utilisation</p>
+              <span className="text-sm font-bold text-blue-700">{Math.round((selected.currentInterns/selected.capacity)*100)}%</span>
+            </div>
+            <ProgressBar value={(selected.currentInterns/selected.capacity)*100} color="blue"/>
+            <p className="text-xs text-blue-600 mt-1.5">{selected.currentInterns} of {selected.capacity} intern slots filled</p>
+          </div>
+        </div>}
+      </Modal>
+
+      {/* Add Partner Form Modal */}
+      <Modal isOpen={showAddForm} onClose={()=>setShowAddForm(false)} title="Add New Industry Partner">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              {label:"Organisation Name *",key:"name",placeholder:"e.g. Accra Brewery Ltd",full:true},
+              {label:"Website",key:"website",placeholder:"https://example.com",full:true},
+            ].map(f=>(
+              <div key={f.key} className={f.full?"sm:col-span-2":""}>
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">{f.label}</label>
+                <input value={newPartner[f.key]} onChange={e=>setNewPartner(p=>({...p,[f.key]:e.target.value}))}
+                  placeholder={f.placeholder}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+              </div>
+            ))}
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1.5">Sector *</label>
+              <select value={newPartner.sector} onChange={e=>setNewPartner(p=>({...p,sector:e.target.value}))}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Select sector...</option>
+                {SECTORS.map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1.5">Region *</label>
+              <select value={newPartner.region} onChange={e=>setNewPartner(p=>({...p,region:e.target.value}))}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Select region...</option>
+                {REGIONS.map(r=><option key={r}>{r}</option>)}
+              </select>
+            </div>
+            {[
+              {label:"Contact Person",key:"contact",placeholder:"e.g. Mr. Kofi Asante"},
+              {label:"Phone",key:"phone",placeholder:"+233 ..."},
+              {label:"Email",key:"email",placeholder:"hr@company.com"},
+              {label:"Year Founded",key:"founded",placeholder:"e.g. 2005"},
+              {label:"Intern Capacity",key:"capacity",placeholder:"e.g. 10"},
+            ].map(f=>(
+              <div key={f.key}>
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">{f.label}</label>
+                <input value={newPartner[f.key]} onChange={e=>setNewPartner(p=>({...p,[f.key]:e.target.value}))}
+                  placeholder={f.placeholder}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+              </div>
+            ))}
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1.5">MOU Status</label>
+              <select value={newPartner.mou} onChange={e=>setNewPartner(p=>({...p,mou:e.target.value}))}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {["Active","Expiring","Pending","Inactive"].map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={()=>setShowAddForm(false)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+            <button onClick={handleAddPartner} disabled={!newPartner.name||!newPartner.sector||!newPartner.region}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">
+              <I name="plus" size={15}/> Add Partner
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
@@ -945,11 +1251,12 @@ const Dashboard=()=>{
   return(
   <div className="fade-in">
     <div className="mb-6"><h2 className="text-xl font-bold text-gray-900">WEL Administration Dashboard</h2><p className="text-sm text-gray-500 mt-1">{new Date().toLocaleDateString("en-GB",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}{sb&&<span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">● Live Data</span>}</p></div>
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
       <StatCard icon="users" label="Active Learners" value={String(stats.active_learners||198)} color="blue" trend={5} sub="Across all industries"/>
       <StatCard icon="building" label="Industry Partners" value={String(stats.active_industries||42)} color="green" trend={12} sub="Active MOU partners"/>
       <StatCard icon="check" label="Avg Progress" value={stats.avg_progress?stats.avg_progress+'%':"87%"} color="purple" trend={3} sub="Current cohort"/>
       <StatCard icon="briefcase" label="Alumni Employed" value={stats.employed_alumni!==null?String(stats.employed_alumni):"78%"} color="orange" trend={7} sub="Post-WEL outcomes"/>
+      <StatCard icon="shield" label="Retention Rate" value={`${Math.round(((LEARNERS.filter(l=>l.status!=="Dropped").length)/LEARNERS.length)*100)}%`} color="cyan" trend={2} sub="Non-dropout rate"/>
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       <div className="bg-white rounded-xl border border-gray-200 p-6">
