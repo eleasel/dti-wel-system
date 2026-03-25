@@ -26,6 +26,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;overflow-
 <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
 <script crossorigin src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js"></script>
 <script crossorigin src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -33,7 +34,21 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f9fafb;overflow-
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 </script>
 <script type="text/babel">
-const {useState,useEffect,useMemo,useCallback}=React;
+const {useState,useEffect,useMemo,useCallback,useRef}=React;
+
+// ===== SUPABASE CONFIG =====
+const SUPABASE_URL = 'REPLACE_WITH_YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'REPLACE_WITH_YOUR_SUPABASE_ANON_KEY';
+const sb = (typeof supabase !== 'undefined' && SUPABASE_URL !== 'REPLACE_WITH_YOUR_SUPABASE_URL')
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+// Helper: run supabase query or return mock fallback
+async function sbQuery(queryFn, fallback) {
+  if (!sb) return { data: fallback, error: null };
+  try { return await queryFn(sb); }
+  catch(e) { console.warn('Supabase query failed, using mock data', e); return { data: fallback, error: e }; }
+}
 const {BarChart,Bar,LineChart,Line,PieChart,Pie,Cell,XAxis,YAxis,CartesianGrid,Tooltip,Legend,ResponsiveContainer,AreaChart,Area,RadarChart,Radar,PolarGrid,PolarAngleAxis,PolarRadiusAxis}=Recharts;
 
 // ===== ICON HELPER =====
@@ -53,14 +68,14 @@ const I=({name,className="",size=20})=><Ic n={ICON_MAP[name]||name} c={className
 
 // ===== MOCK DATA =====
 const LEARNERS=[
-  {id:1,name:"Kwame Asante",email:"kwame@dti.edu.gh",gender:"Male",region:"Greater Accra",qualification:"Diploma in ICT",industry:"TechCorp Ghana",supervisor:"Dr. Mensah",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:78,skills:["Python","Web Dev","Database"],logEntries:45,issuesReported:2,specialNeeds:false},
-  {id:2,name:"Ama Boateng",email:"ama@dti.edu.gh",gender:"Female",region:"Ashanti",qualification:"HND Fashion Design",industry:"StyleHouse Ltd",supervisor:"Mrs. Owusu",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:85,skills:["Pattern Making","CAD Design","Textiles"],logEntries:52,issuesReported:0,specialNeeds:false},
-  {id:3,name:"Kofi Mensah",email:"kofi@dti.edu.gh",gender:"Male",region:"Western",qualification:"Diploma in Electrical",industry:"PowerGrid Solutions",supervisor:"Eng. Addo",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:62,skills:["Wiring","PLC","Safety"],logEntries:38,issuesReported:1,specialNeeds:false},
-  {id:4,name:"Efua Darkwa",email:"efua@dti.edu.gh",gender:"Female",region:"Central",qualification:"HND Hospitality",industry:"Golden Tulip Hotel",supervisor:"Mr. Tetteh",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:91,skills:["Front Desk","F&B","Event Mgmt"],logEntries:58,issuesReported:0,specialNeeds:false},
-  {id:5,name:"Yaw Frimpong",email:"yaw@dti.edu.gh",gender:"Male",region:"Eastern",qualification:"Diploma in Auto Mechanics",industry:"Japan Motors",supervisor:"Mr. Appiah",status:"Completed",startDate:"2025-04-01",endDate:"2025-09-30",progress:100,skills:["Engine Repair","Diagnostics","Welding"],logEntries:78,issuesReported:3,specialNeeds:false},
-  {id:6,name:"Akua Serwaa",email:"akua@dti.edu.gh",gender:"Female",region:"Volta",qualification:"HND Catering",industry:"Papaye Fast Food",supervisor:"Chef Adu",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:55,skills:["Cooking","Hygiene","Menu Planning"],logEntries:32,issuesReported:1,specialNeeds:true},
-  {id:7,name:"Nana Osei",email:"nana@dti.edu.gh",gender:"Male",region:"Northern",qualification:"Diploma in Welding",industry:"Tema Steel Works",supervisor:"Mr. Quaye",status:"Dropped",startDate:"2025-10-01",endDate:"2026-03-31",progress:15,skills:["MIG Welding","Safety","Blueprint"],logEntries:8,issuesReported:4,specialNeeds:false},
-  {id:8,name:"Adwoa Poku",email:"adwoa@dti.edu.gh",gender:"Female",region:"Bono",qualification:"HND Cosmetology",industry:"Glamour Salon",supervisor:"Mrs. Mensah",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:72,skills:["Hair Styling","Makeup","Nail Art"],logEntries:44,issuesReported:0,specialNeeds:false},
+  {id:1,name:"Kwame Asante",email:"kwame@dti.edu.gh",privateEmail:"kwame.asante@gmail.com",dob:"2002-07-14",gender:"Male",region:"Greater Accra",district:"Accra Metropolitan",hometown:"Accra",address:"House No. 12, Tema Community 5, Accra",phone:"+233 24 123 4567",qualification:"Diploma in ICT",grade:"Second Class Upper",industry:"TechCorp Ghana",supervisor:"Dr. Mensah",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:78,skills:["Python","Web Dev","Database"],technicalSkills:["Python Programming","Web Development","Database Management","Network Configuration","Cybersecurity Basics"],softSkills:["Communication","Teamwork","Problem Solving","Time Management","Critical Thinking"],logEntries:45,issuesReported:2,disability:"None",disabilityDetails:"",hasCv:true,photo:null},
+  {id:2,name:"Ama Boateng",email:"ama@dti.edu.gh",privateEmail:"ama.boateng@yahoo.com",dob:"2001-03-22",gender:"Female",region:"Ashanti",district:"Kumasi Metro",hometown:"Kumasi",address:"Plot 7, Adum, Kumasi",phone:"+233 50 234 5678",qualification:"HND Fashion Design",grade:"Distinction",industry:"StyleHouse Ltd",supervisor:"Mrs. Owusu",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:85,skills:["Pattern Making","CAD Design","Textiles"],technicalSkills:["Pattern Making","CAD Design","Textile Science","Garment Construction","Embroidery"],softSkills:["Creativity","Attention to Detail","Client Relations","Presentation","Leadership"],logEntries:52,issuesReported:0,disability:"None",disabilityDetails:"",hasCv:true,photo:null},
+  {id:3,name:"Kofi Mensah",email:"kofi@dti.edu.gh",privateEmail:"kofi.mensah@gmail.com",dob:"2003-11-05",gender:"Male",region:"Western",district:"Sekondi-Takoradi Metro",hometown:"Takoradi",address:"No. 3 Effia Road, Takoradi",phone:"+233 27 345 6789",qualification:"Diploma in Electrical",grade:"Second Class Lower",industry:"PowerGrid Solutions",supervisor:"Eng. Addo",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:62,skills:["Wiring","PLC","Safety"],technicalSkills:["Electrical Wiring","PLC Programming","Safety Protocols","Circuit Analysis","Installation"],softSkills:["Punctuality","Team Collaboration","Responsibility","Adaptability","Focus"],logEntries:38,issuesReported:1,disability:"None",disabilityDetails:"",hasCv:false,photo:null},
+  {id:4,name:"Efua Darkwa",email:"efua@dti.edu.gh",privateEmail:"efua.darkwa@outlook.com",dob:"2002-01-30",gender:"Female",region:"Central",district:"Cape Coast Metro",hometown:"Cape Coast",address:"27 Adisadel Road, Cape Coast",phone:"+233 55 456 7890",qualification:"HND Hospitality",grade:"Distinction",industry:"Golden Tulip Hotel",supervisor:"Mr. Tetteh",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:91,skills:["Front Desk","F&B","Event Mgmt"],technicalSkills:["Front Office Operations","Food & Beverage","Event Management","POS Systems","Housekeeping"],softSkills:["Customer Service","Empathy","Professionalism","Multitasking","Conflict Resolution"],logEntries:58,issuesReported:0,disability:"None",disabilityDetails:"",hasCv:true,photo:null},
+  {id:5,name:"Yaw Frimpong",email:"yaw@dti.edu.gh",privateEmail:"yaw.frimpong@gmail.com",dob:"2001-09-18",gender:"Male",region:"Eastern",district:"New Juaben Municipal",hometown:"Koforidua",address:"Block C, Juaben Road, Koforidua",phone:"+233 24 567 8901",qualification:"Diploma in Auto Mechanics",grade:"Second Class Upper",industry:"Japan Motors",supervisor:"Mr. Appiah",status:"Completed",startDate:"2025-04-01",endDate:"2025-09-30",progress:100,skills:["Engine Repair","Diagnostics","Welding"],technicalSkills:["Engine Diagnostics","Auto Welding","Suspension Systems","Electrical Systems","Brake Repair"],softSkills:["Perseverance","Accountability","Precision","Initiative","Mentoring"],logEntries:78,issuesReported:3,disability:"None",disabilityDetails:"",hasCv:true,photo:null},
+  {id:6,name:"Akua Serwaa",email:"akua@dti.edu.gh",privateEmail:"akua.serwaa@gmail.com",dob:"2002-05-09",gender:"Female",region:"Volta",district:"Ho Municipal",hometown:"Ho",address:"9 Kpodzi Street, Ho",phone:"+233 20 678 9012",qualification:"HND Catering",grade:"Pass",industry:"Papaye Fast Food",supervisor:"Chef Adu",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:55,skills:["Cooking","Hygiene","Menu Planning"],technicalSkills:["Continental Cooking","Food Hygiene","Menu Planning","Pastry & Baking","Nutrition"],softSkills:["Resilience","Creativity","Teamwork","Cultural Awareness","Patience"],logEntries:32,issuesReported:1,disability:"Physical",disabilityDetails:"Mobility impairment — requires accessible workstation",hasCv:true,photo:null},
+  {id:7,name:"Nana Osei",email:"nana@dti.edu.gh",privateEmail:"nana.osei@gmail.com",dob:"2003-02-14",gender:"Male",region:"Northern",district:"Tamale Metro",hometown:"Tamale",address:"Tishigu Area, Tamale",phone:"+233 26 789 0123",qualification:"Diploma in Welding",grade:"Pass",industry:"Tema Steel Works",supervisor:"Mr. Quaye",status:"Dropped",startDate:"2025-10-01",endDate:"2026-03-31",progress:15,skills:["MIG Welding","Safety","Blueprint"],technicalSkills:["MIG Welding","Safety & PPE","Blueprint Reading","Metal Fabrication","Cutting"],softSkills:["Punctuality","Discipline","Focus"],logEntries:8,issuesReported:4,disability:"None",disabilityDetails:"",hasCv:false,photo:null},
+  {id:8,name:"Adwoa Poku",email:"adwoa@dti.edu.gh",privateEmail:"adwoa.poku@icloud.com",dob:"2001-12-03",gender:"Female",region:"Bono",district:"Sunyani Municipal",hometown:"Sunyani",address:"Fiapre Road, Sunyani",phone:"+233 59 890 1234",qualification:"HND Cosmetology",grade:"Second Class Upper",industry:"Glamour Salon",supervisor:"Mrs. Mensah",status:"Active",startDate:"2025-10-01",endDate:"2026-03-31",progress:72,skills:["Hair Styling","Makeup","Nail Art"],technicalSkills:["Hair Styling","Makeup Artistry","Nail Technician","Skin Care","Salon Management"],softSkills:["Creativity","Client Care","Time Management","Business Acumen","Communication"],logEntries:44,issuesReported:0,disability:"None",disabilityDetails:"",hasCv:true,photo:null},
 ];
 
 const INDUSTRIES=[
@@ -531,6 +546,185 @@ const IndustryModule=()=>{
   );
 };
 
+// LEARNER PROFILE MODULE
+const LearnerProfileModule=({user})=>{
+  const learner=LEARNERS.find(l=>l.email===user?.email)||LEARNERS[0];
+  const [editing,setEditing]=useState(false);
+  const [photo,setPhoto]=useState(null);
+  const fileRef=useRef(null);
+  const daysLeft=Math.max(0,Math.round((new Date(learner.endDate)-new Date())/(1000*60*60*24)));
+  const elapsed=Math.round((new Date()-new Date(learner.startDate))/(1000*60*60*24));
+
+  const handlePhoto=(e)=>{
+    const file=e.target.files[0];
+    if(file){const reader=new FileReader();reader.onload=ev=>setPhoto(ev.target.result);reader.readAsDataURL(file);}
+  };
+
+  const Field=({label,value,icon,private:isPrivate})=>(
+    <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
+      {icon&&<div className="mt-0.5 shrink-0 text-blue-500"><I name={icon} size={16}/></div>}
+      <div className="min-w-0">
+        <p className="text-xs text-gray-400 font-medium uppercase tracking-wide flex items-center gap-1">
+          {label}{isPrivate&&<span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-semibold">Private</span>}
+        </p>
+        <p className="text-sm font-semibold text-gray-800 mt-0.5 break-words">{value||"—"}</p>
+      </div>
+    </div>
+  );
+
+  const SectionHead=({title,icon})=>(
+    <div className="flex items-center gap-2 mb-3 mt-1">
+      <div className="p-1.5 bg-blue-50 rounded-lg"><I name={icon} className="text-blue-600" size={15}/></div>
+      <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide">{title}</h3>
+    </div>
+  );
+
+  return(
+    <div className="fade-in max-w-5xl mx-auto">
+      {/* Header banner */}
+      <div className="relative rounded-2xl overflow-hidden mb-6" style={{background:"linear-gradient(135deg,#1d4ed8 0%,#4f46e5 100%)"}}>
+        <div className="absolute inset-0 opacity-10" style={{backgroundImage:"radial-gradient(circle at 20% 50%,white 1px,transparent 1px)",backgroundSize:"30px 30px"}}/>
+        <div className="relative z-10 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+          {/* Passport photo */}
+          <div className="relative shrink-0">
+            <div className="w-24 h-24 rounded-2xl overflow-hidden border-4 border-white/30 bg-white/20 flex items-center justify-center cursor-pointer group" onClick={()=>fileRef.current?.click()}>
+              {photo
+                ? <img src={photo} alt="Passport" className="w-full h-full object-cover"/>
+                : <div className="flex flex-col items-center text-white/70 group-hover:text-white transition-colors text-center px-2">
+                    <I name="upload" size={22}/>
+                    <span className="text-[10px] mt-1 font-medium leading-tight">Add Photo</span>
+                  </div>
+              }
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto}/>
+            {photo&&<button onClick={()=>fileRef.current?.click()} className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md" title="Change photo"><I name="edit" size={13} className="text-blue-600"/></button>}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-black text-white">{learner.name}</h1>
+              <Badge color={learner.status==="Active"?"green":learner.status==="Completed"?"blue":"red"}>{learner.status}</Badge>
+            </div>
+            <p className="text-blue-200 mt-1 text-sm">{learner.qualification} &middot; {learner.industry}</p>
+            <div className="flex flex-wrap gap-4 mt-3">
+              <div className="text-center"><p className="text-white font-bold text-lg">{learner.progress}%</p><p className="text-blue-200 text-xs">Progress</p></div>
+              <div className="text-center"><p className="text-white font-bold text-lg">{elapsed}d</p><p className="text-blue-200 text-xs">Elapsed</p></div>
+              <div className="text-center"><p className="text-white font-bold text-lg">{daysLeft}d</p><p className="text-blue-200 text-xs">Remaining</p></div>
+              <div className="text-center"><p className="text-white font-bold text-lg">{learner.logEntries}</p><p className="text-blue-200 text-xs">Log Entries</p></div>
+            </div>
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div className="relative z-10 px-6 pb-4">
+          <div className="h-2 bg-white/20 rounded-full"><div className="h-full rounded-full bg-white/80" style={{width:`${learner.progress}%`}}/></div>
+          <div className="flex justify-between mt-1"><span className="text-blue-200 text-xs">{learner.startDate}</span><span className="text-blue-200 text-xs">{learner.endDate}</span></div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* LEFT COLUMN */}
+        <div className="space-y-5">
+          {/* Personal Info */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <SectionHead title="Personal Information" icon="person"/>
+            <div className="space-y-2">
+              <Field label="Full Name" value={learner.name} icon="person"/>
+              <Field label="Date of Birth" value={learner.dob} icon="calendar"/>
+              <Field label="Gender" value={learner.gender} icon="gender-ambiguous"/>
+              <Field label="Phone" value={learner.phone} icon="phone" private/>
+              <Field label="Institute Email" value={learner.email} icon="envelope"/>
+              <Field label="Private Email" value={learner.privateEmail} icon="envelope-fill" private/>
+            </div>
+          </div>
+
+          {/* Disability */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <SectionHead title="Disability / Special Needs" icon="heart"/>
+            <div className="space-y-2">
+              <Field label="Disability Status" value={learner.disability||"None"} icon="shield-check"/>
+              {learner.disabilityDetails&&<Field label="Details" value={learner.disabilityDetails} icon="info-circle" private/>}
+            </div>
+            <p className="text-xs text-gray-400 mt-3 leading-relaxed">This information is kept strictly confidential and used only to ensure appropriate workplace support and accessibility.</p>
+          </div>
+        </div>
+
+        {/* MIDDLE COLUMN */}
+        <div className="space-y-5">
+          {/* Residential / Demographics */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <SectionHead title="Residential & Demographics" icon="geo-alt"/>
+            <div className="space-y-2">
+              <Field label="Region" value={learner.region} icon="globe"/>
+              <Field label="District" value={learner.district} icon="pin"/>
+              <Field label="Hometown" value={learner.hometown} icon="house"/>
+              <Field label="Residential Address" value={learner.address} icon="geo-alt" private/>
+            </div>
+          </div>
+
+          {/* Academic */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <SectionHead title="Academic Information" icon="book"/>
+            <div className="space-y-2">
+              <Field label="Programme of Study" value={learner.qualification} icon="mortarboard"/>
+              <Field label="Grade / Classification" value={learner.grade} icon="award"/>
+              <Field label="Supervisor" value={learner.supervisor} icon="person-check"/>
+              <Field label="Industry Partner" value={learner.industry} icon="building"/>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="space-y-5">
+          {/* Technical Skills */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <SectionHead title="Technical Skills" icon="zap"/>
+            <div className="flex flex-wrap gap-2">
+              {learner.technicalSkills.map((s,i)=>(
+                <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl text-xs font-semibold">{s}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Soft Skills */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <SectionHead title="Soft Skills" icon="star"/>
+            <div className="flex flex-wrap gap-2">
+              {learner.softSkills.map((s,i)=>(
+                <span key={i} className="px-3 py-1.5 bg-green-50 text-green-700 rounded-xl text-xs font-semibold">{s}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* My CV — only visible to learner */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <SectionHead title="My CV" icon="file"/>
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold uppercase tracking-wide">Only You Can See This</span>
+            </div>
+            {learner.hasCv
+              ? <div>
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
+                    <div className="p-2 bg-green-100 rounded-lg"><I name="filecheck" className="text-green-600" size={20}/></div>
+                    <div className="flex-1"><p className="text-sm font-semibold text-green-800">CV Uploaded</p><p className="text-xs text-green-600 mt-0.5">Last updated: March 2026</p></div>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <button className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"><I name="eye" size={15}/>View CV</button>
+                    <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"><I name="download" size={15}/>Download</button>
+                  </div>
+                </div>
+              : <div className="p-4 border-2 border-dashed border-gray-200 rounded-xl text-center">
+                  <I name="upload" className="text-gray-300 mx-auto mb-2" size={28}/>
+                  <p className="text-sm text-gray-500 font-medium">No CV uploaded yet</p>
+                  <button className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">Upload CV</button>
+                </div>
+            }
+            <p className="text-xs text-gray-400 mt-3 text-center">Your CV is private. Only you and WEL admin can access it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 8. CV & PORTFOLIO
 const CVModule=()=>(
   <div className="fade-in">
@@ -730,14 +924,32 @@ const MentorModule=()=>{
 };
 
 // ===== DASHBOARD =====
-const Dashboard=()=>(
+const Dashboard=()=>{
+  const [stats,setStats]=useState({active_learners:198,active_industries:42,employed_alumni:null,avg_progress:null});
+  const [recentIssues,setRecentIssues]=useState(ISSUES);
+  const [recentNotifs,setRecentNotifs]=useState(NOTIFICATIONS);
+  const [jobs,setJobs]=useState(EMPLOYMENT_REQUESTS);
+  useEffect(()=>{
+    if(!sb)return;
+    (async()=>{
+      const {data:s}=await sb.from('dashboard_stats').select('*').single();
+      if(s)setStats(s);
+      const {data:iss}=await sb.from('issues').select('*').order('created_at',{ascending:false}).limit(3);
+      if(iss&&iss.length)setRecentIssues(iss.map(i=>({...i,learner:i.learner_name||'Learner'})));
+      const {data:notifs}=await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(3);
+      if(notifs&&notifs.length)setRecentNotifs(notifs.map(n=>({...n,date:n.created_at?.split('T')[0]||''})));
+      const {data:emp}=await sb.from('employment_requests').select('*').order('date_posted',{ascending:false}).limit(3);
+      if(emp&&emp.length)setJobs(emp.map(e=>({...e,employer:e.employer_name||'Employer'})));
+    })();
+  },[]);
+  return(
   <div className="fade-in">
-    <div className="mb-6"><h2 className="text-xl font-bold text-gray-900">WEL Administration Dashboard</h2><p className="text-sm text-gray-500 mt-1">{new Date().toLocaleDateString("en-GB",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</p></div>
+    <div className="mb-6"><h2 className="text-xl font-bold text-gray-900">WEL Administration Dashboard</h2><p className="text-sm text-gray-500 mt-1">{new Date().toLocaleDateString("en-GB",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}{sb&&<span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">● Live Data</span>}</p></div>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <StatCard icon="users" label="Active Learners" value="198" color="blue" trend={5} sub="Across 6 industries"/>
-      <StatCard icon="building" label="Industry Partners" value="42" color="green" trend={12} sub="3 new this quarter"/>
-      <StatCard icon="check" label="Completion Rate" value="87%" color="purple" trend={3} sub="Above target"/>
-      <StatCard icon="briefcase" label="Employment Rate" value="78%" color="orange" trend={7} sub="6mo post-WEL"/>
+      <StatCard icon="users" label="Active Learners" value={String(stats.active_learners||198)} color="blue" trend={5} sub="Across all industries"/>
+      <StatCard icon="building" label="Industry Partners" value={String(stats.active_industries||42)} color="green" trend={12} sub="Active MOU partners"/>
+      <StatCard icon="check" label="Avg Progress" value={stats.avg_progress?stats.avg_progress+'%':"87%"} color="purple" trend={3} sub="Current cohort"/>
+      <StatCard icon="briefcase" label="Alumni Employed" value={stats.employed_alumni!==null?String(stats.employed_alumni):"78%"} color="orange" trend={7} sub="Post-WEL outcomes"/>
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -764,19 +976,20 @@ const Dashboard=()=>(
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="font-semibold mb-4 flex items-center gap-2"><I name="alert" className="text-red-500" size={18}/> Recent Issues</h3>
-        <div className="space-y-3">{ISSUES.slice(0,3).map(iss=><div key={iss.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"><Badge color={iss.priority==="Critical"?"red":"orange"}>{iss.priority}</Badge><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{iss.description}</p><p className="text-xs text-gray-400">{iss.learner}</p></div></div>)}</div>
+        <div className="space-y-3">{recentIssues.slice(0,3).map(iss=><div key={iss.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"><Badge color={iss.priority==="Critical"?"red":"orange"}>{iss.priority}</Badge><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{iss.description}</p><p className="text-xs text-gray-400">{iss.learner}</p></div></div>)}</div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="font-semibold mb-4 flex items-center gap-2"><I name="bell" className="text-blue-500" size={18}/> Notifications</h3>
-        <div className="space-y-3">{NOTIFICATIONS.slice(0,3).map(n=><div key={n.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"><Badge color={n.type==="Event"?"blue":n.type==="Reminder"?"yellow":"green"}>{n.type}</Badge><div className="flex-1 min-w-0"><p className="text-sm truncate">{n.message}</p><p className="text-xs text-gray-400">{n.date}</p></div></div>)}</div>
+        <div className="space-y-3">{recentNotifs.slice(0,3).map(n=><div key={n.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"><Badge color={n.type==="Event"?"blue":n.type==="Reminder"?"yellow":"green"}>{n.type}</Badge><div className="flex-1 min-w-0"><p className="text-sm truncate">{n.message}</p><p className="text-xs text-gray-400">{n.date}</p></div></div>)}</div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="font-semibold mb-4 flex items-center gap-2"><I name="briefcase" className="text-green-500" size={18}/> Job Requests</h3>
-        <div className="space-y-3">{EMPLOYMENT_REQUESTS.map(r=><div key={r.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"><Badge color={r.status==="Open"?"blue":"green"}>{r.status}</Badge><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{r.position}</p><p className="text-xs text-gray-400">{r.employer}</p></div></div>)}</div>
+        <div className="space-y-3">{jobs.map(r=><div key={r.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"><Badge color={r.status==="Open"?"blue":"green"}>{r.status}</Badge><div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{r.position}</p><p className="text-xs text-gray-400">{r.employer}</p></div></div>)}</div>
       </div>
     </div>
   </div>
-);
+  );
+};
 
 // ===== ROLES & NAVIGATION =====
 const ROLES=[
@@ -790,18 +1003,217 @@ const ROLES=[
 
 const NAV={
   admin:[{id:"dashboard",label:"Dashboard",icon:"home"},{id:"placements",label:"Placements",icon:"users"},{id:"surveys",label:"Surveys",icon:"clipboard"},{id:"brochure",label:"Transitions",icon:"compass"},{id:"notifications",label:"Notifications",icon:"bell"},{id:"reporting",label:"Reports & KPIs",icon:"chart"},{id:"logbook",label:"Digital Logbook",icon:"book"},{id:"industry",label:"Industry Partners",icon:"building"},{id:"cv",label:"CV & Portfolios",icon:"file"},{id:"issues",label:"Issues Log",icon:"alert"},{id:"employment",label:"Employment Portal",icon:"briefcase"},{id:"alumni",label:"Alumni Tracker",icon:"grad"},{id:"compliance",label:"Compliance",icon:"shield"},{id:"mentors",label:"Mentor Matching",icon:"heart"}],
-  learner:[{id:"dashboard",label:"My Dashboard",icon:"home"},{id:"logbook",label:"My Logbook",icon:"book"},{id:"cv",label:"My CV",icon:"file"},{id:"issues",label:"Report Issue",icon:"alert"},{id:"brochure",label:"Career Resources",icon:"compass"},{id:"notifications",label:"Notifications",icon:"bell"},{id:"mentors",label:"My Mentor",icon:"heart"}],
+  learner:[{id:"profile",label:"My Profile",icon:"person"},{id:"dashboard",label:"My Dashboard",icon:"home"},{id:"logbook",label:"My Logbook",icon:"book"},{id:"issues",label:"Report Issue",icon:"alert"},{id:"brochure",label:"Career Resources",icon:"compass"},{id:"notifications",label:"Notifications",icon:"bell"},{id:"mentors",label:"My Mentor",icon:"heart"}],
   supervisor:[{id:"dashboard",label:"Dashboard",icon:"home"},{id:"logbook",label:"Review Logbooks",icon:"book"},{id:"placements",label:"My Interns",icon:"users"},{id:"issues",label:"Issues",icon:"alert"},{id:"reporting",label:"Performance",icon:"chart"}],
   leadership:[{id:"dashboard",label:"Executive Dashboard",icon:"home"},{id:"reporting",label:"Reports & KPIs",icon:"chart"},{id:"compliance",label:"Compliance",icon:"shield"},{id:"alumni",label:"Alumni Outcomes",icon:"grad"},{id:"employment",label:"Employment",icon:"briefcase"},{id:"industry",label:"Partners",icon:"building"}],
   employer:[{id:"dashboard",label:"Dashboard",icon:"home"},{id:"employment",label:"My Requests",icon:"briefcase"},{id:"cv",label:"Candidates",icon:"users"},{id:"industry",label:"Partnership",icon:"building"}],
   alumni:[{id:"dashboard",label:"My Dashboard",icon:"home"},{id:"brochure",label:"Career Services",icon:"compass"},{id:"employment",label:"Opportunities",icon:"briefcase"},{id:"notifications",label:"Messages",icon:"bell"}],
 };
 
-// ===== MAIN APP =====
+
+// ===== DEMO USERS =====
+const DEMO_USERS=[
+  {email:"admin@dti.edu.gh",password:"admin123",role:"admin",name:"WEL Administrator",initials:"WA"},
+  {email:"kwame@dti.edu.gh",password:"learn123",role:"learner",name:"Kwame Asante",initials:"KA"},
+  {email:"supervisor@techcorp.gh",password:"super123",role:"supervisor",name:"Dr. Mensah",initials:"DM"},
+  {email:"leadership@dti.edu.gh",password:"lead123",role:"leadership",name:"Director Boateng",initials:"DB"},
+  {email:"hr@employer.gh",password:"emp123",role:"employer",name:"HR Manager",initials:"HR"},
+  {email:"yaw@alumni.dti.gh",password:"alum123",role:"alumni",name:"Yaw Frimpong",initials:"YF"},
+];
+
+// ===== LOGIN SCREEN =====
+function LoginScreen({onLogin}){
+  const [email,setEmail]=useState("");
+  const [password,setPassword]=useState("");
+  const [showPass,setShowPass]=useState(false);
+  const [error,setError]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [showDemo,setShowDemo]=useState(false);
+
+  const handleSubmit=async(e)=>{
+    e.preventDefault();
+    setLoading(true);setError("");
+    if(sb){
+      // Real Supabase Auth
+      const {data,error}=await sb.auth.signInWithPassword({email,password});
+      if(error){setError(error.message);setLoading(false);return;}
+      const {data:profile}=await sb.from('profiles').select('*').eq('id',data.user.id).single();
+      if(profile){onLogin({email:profile.email,name:profile.name,role:profile.role,initials:profile.initials||profile.name.substring(0,2).toUpperCase(),id:profile.id});}
+      else{setError("Profile not found. Contact admin.");setLoading(false);}
+    } else {
+      // Demo mode (no Supabase configured)
+      await new Promise(r=>setTimeout(r,900));
+      const user=DEMO_USERS.find(u=>u.email===email&&u.password===password);
+      if(user){onLogin(user);}
+      else{setError("Invalid credentials. Use a demo account below.");setLoading(false);}
+    }
+  };
+
+  const quickLogin=(u)=>{setEmail(u.email);setPassword(u.password);setShowDemo(false);};
+
+  return(
+    <div className="min-h-screen flex" style={{fontFamily:"system-ui,-apple-system,sans-serif"}}>
+      {/* Left branding panel */}
+      <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden flex-col justify-between p-14" style={{background:"linear-gradient(135deg,#1d4ed8 0%,#2563eb 40%,#4f46e5 100%)"}}>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div style={{position:"absolute",top:"-120px",left:"-120px",width:"400px",height:"400px",borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
+          <div style={{position:"absolute",bottom:"-80px",right:"-80px",width:"350px",height:"350px",borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
+          <div style={{position:"absolute",top:"40%",right:"10%",width:"200px",height:"200px",borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
+        </div>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div style={{width:"52px",height:"52px",background:"rgba(255,255,255,0.15)",borderRadius:"16px",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(10px)"}}>
+              <i className="bi bi-mortarboard" style={{fontSize:"26px",color:"white"}}/>
+            </div>
+            <div>
+              <p style={{color:"white",fontWeight:"900",fontSize:"20px",lineHeight:1.2}}>DTI WEL System</p>
+              <p style={{color:"rgba(191,219,254,0.9)",fontSize:"13px"}}>Design &amp; Technology Institute</p>
+            </div>
+          </div>
+        </div>
+        <div className="relative z-10">
+          <h2 style={{color:"white",fontWeight:"900",fontSize:"38px",lineHeight:1.15,marginBottom:"16px"}}>World-Class<br/>Workplace<br/>Learning.</h2>
+          <p style={{color:"rgba(191,219,254,0.85)",fontSize:"16px",lineHeight:1.6,marginBottom:"36px"}}>Connecting learners, industry partners and DTI management for a seamless 6-month WEL experience.</p>
+          <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+            {[
+              {icon:"people-fill",text:"6 role-based portals for all stakeholders"},
+              {icon:"bar-chart-line-fill",text:"Live KPI dashboards & TVET compliance tracking"},
+              {icon:"shield-fill-check",text:"ILO · UNESCO-UNEVOC · COTVET aligned"},
+              {icon:"phone-fill",text:"PWA — install on any device, works offline"},
+            ].map((f,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:"12px"}}>
+                <div style={{width:"34px",height:"34px",background:"rgba(255,255,255,0.12)",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <i className={`bi bi-${f.icon}`} style={{fontSize:"15px",color:"white"}}/>
+                </div>
+                <p style={{color:"rgba(219,234,254,0.9)",fontSize:"14px"}}>{f.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="relative z-10">
+          <p style={{color:"rgba(147,197,253,0.7)",fontSize:"12px"}}>© 2026 Design &amp; Technology Institute · Ghana · Accra</p>
+        </div>
+      </div>
+
+      {/* Right login panel */}
+      <div className="w-full lg:w-[48%] flex items-center justify-center p-6 sm:p-10" style={{background:"#f8fafc"}}>
+        <div style={{width:"100%",maxWidth:"420px"}}>
+          {/* Mobile logo */}
+          <div className="lg:hidden text-center mb-8">
+            <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:"60px",height:"60px",background:"#2563eb",borderRadius:"18px",marginBottom:"12px",boxShadow:"0 10px 25px rgba(37,99,235,0.3)"}}>
+              <i className="bi bi-mortarboard" style={{fontSize:"28px",color:"white"}}/>
+            </div>
+            <h1 style={{fontWeight:"900",fontSize:"22px",color:"#111827"}}>DTI WEL System</h1>
+            <p style={{color:"#9ca3af",fontSize:"13px"}}>Design &amp; Technology Institute</p>
+          </div>
+
+          <div style={{marginBottom:"32px"}}>
+            <h2 style={{fontWeight:"900",fontSize:"26px",color:"#111827",marginBottom:"6px"}}>Welcome back 👋</h2>
+            <p style={{color:"#6b7280",fontSize:"15px"}}>Sign in to your WEL portal</p>
+          </div>
+
+          {error&&(
+            <div style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:"12px",padding:"12px 14px",marginBottom:"16px",display:"flex",alignItems:"center",gap:"8px"}}>
+              <i className="bi bi-exclamation-triangle-fill" style={{fontSize:"15px",color:"#ef4444",flexShrink:0}}/>
+              <p style={{color:"#dc2626",fontSize:"13px"}}>{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={{display:"flex",flexDirection:"column",gap:"16px"}}>
+            <div>
+              <label style={{display:"block",fontSize:"13px",fontWeight:"600",color:"#374151",marginBottom:"6px"}}>Email Address</label>
+              <div style={{position:"relative"}}>
+                <i className="bi bi-envelope" style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"15px",color:"#9ca3af"}}/>
+                <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@dti.edu.gh"
+                  style={{width:"100%",paddingLeft:"42px",paddingRight:"16px",paddingTop:"13px",paddingBottom:"13px",border:"1.5px solid #e5e7eb",borderRadius:"12px",fontSize:"14px",outline:"none",background:"white",boxSizing:"border-box",transition:"border-color .2s"}}
+                  onFocus={e=>e.target.style.borderColor="#2563eb"} onBlur={e=>e.target.style.borderColor="#e5e7eb"}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{display:"block",fontSize:"13px",fontWeight:"600",color:"#374151",marginBottom:"6px"}}>Password</label>
+              <div style={{position:"relative"}}>
+                <i className="bi bi-lock" style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"15px",color:"#9ca3af"}}/>
+                <input type={showPass?"text":"password"} required value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"
+                  style={{width:"100%",paddingLeft:"42px",paddingRight:"46px",paddingTop:"13px",paddingBottom:"13px",border:"1.5px solid #e5e7eb",borderRadius:"12px",fontSize:"14px",outline:"none",background:"white",boxSizing:"border-box",transition:"border-color .2s"}}
+                  onFocus={e=>e.target.style.borderColor="#2563eb"} onBlur={e=>e.target.style.borderColor="#e5e7eb"}
+                />
+                <button type="button" onClick={()=>setShowPass(!showPass)} style={{position:"absolute",right:"14px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#9ca3af",padding:0}}>
+                  <i className={`bi bi-${showPass?"eye-slash":"eye"}`} style={{fontSize:"16px"}}/>
+                </button>
+              </div>
+            </div>
+
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <label style={{display:"flex",alignItems:"center",gap:"8px",cursor:"pointer"}}>
+                <input type="checkbox" style={{width:"15px",height:"15px",accentColor:"#2563eb"}}/>
+                <span style={{fontSize:"13px",color:"#6b7280"}}>Remember me</span>
+              </label>
+              <button type="button" style={{fontSize:"13px",color:"#2563eb",fontWeight:"600",background:"none",border:"none",cursor:"pointer",padding:0}}>Forgot password?</button>
+            </div>
+
+            <button type="submit" disabled={loading}
+              style={{width:"100%",background:loading?"#93c5fd":"#2563eb",color:"white",fontWeight:"700",fontSize:"15px",padding:"14px",borderRadius:"12px",border:"none",cursor:loading?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",boxShadow:"0 8px 20px rgba(37,99,235,0.3)",transition:"background .2s"}}>
+              {loading?(
+                <><div style={{width:"18px",height:"18px",border:"2.5px solid rgba(255,255,255,0.3)",borderTopColor:"white",borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/><span>Signing in...</span></>
+              ):(
+                <><span>Sign In to Portal</span><i className="bi bi-arrow-right" style={{fontSize:"15px"}}/></>
+              )}
+            </button>
+          </form>
+
+          {/* Demo accounts */}
+          <div style={{marginTop:"24px"}}>
+            <button onClick={()=>setShowDemo(!showDemo)}
+              style={{width:"100%",padding:"11px",border:"1.5px dashed #d1d5db",borderRadius:"12px",fontSize:"13px",color:"#6b7280",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",transition:"all .2s"}}
+              onMouseOver={e=>{e.currentTarget.style.borderColor="#2563eb";e.currentTarget.style.color="#2563eb";}}
+              onMouseOut={e=>{e.currentTarget.style.borderColor="#d1d5db";e.currentTarget.style.color="#6b7280";}}>
+              <i className="bi bi-people" style={{fontSize:"14px"}}/>
+              <span>Demo Accounts — Try the System</span>
+              <i className={`bi bi-chevron-${showDemo?"up":"down"}`} style={{fontSize:"12px"}}/>
+            </button>
+
+            {showDemo&&(
+              <div style={{marginTop:"10px",background:"white",border:"1px solid #f3f4f6",borderRadius:"14px",padding:"10px",boxShadow:"0 4px 15px rgba(0,0,0,0.06)"}}>
+                <p style={{fontSize:"11px",color:"#9ca3af",fontWeight:"600",padding:"4px 8px 8px",textTransform:"uppercase",letterSpacing:"0.05em"}}>Click to auto-fill credentials</p>
+                {DEMO_USERS.map((u,i)=>(
+                  <button key={i} onClick={()=>quickLogin(u)}
+                    style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",padding:"10px",borderRadius:"10px",background:"none",border:"none",cursor:"pointer",textAlign:"left",transition:"background .15s"}}
+                    onMouseOver={e=>e.currentTarget.style.background="#eff6ff"}
+                    onMouseOut={e=>e.currentTarget.style.background="none"}>
+                    <div style={{width:"36px",height:"36px",background:"#dbeafe",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{fontSize:"11px",fontWeight:"800",color:"#1d4ed8"}}>{u.initials}</span>
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{fontSize:"13px",fontWeight:"700",color:"#1f2937",marginBottom:"1px"}}>{u.name}</p>
+                      <p style={{fontSize:"11px",color:"#9ca3af",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</p>
+                    </div>
+                    <span style={{fontSize:"11px",background:"#f3f4f6",color:"#6b7280",padding:"3px 8px",borderRadius:"20px",flexShrink:0,textTransform:"capitalize"}}>{u.role}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <p style={{textAlign:"center",fontSize:"11px",color:"#d1d5db",marginTop:"28px"}}>ILO · UNESCO-UNEVOC · COTVET Aligned · © 2026</p>
+        </div>
+      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+}
+
 function App(){
+  const [user,setUser]=useState(null);
   const [role,setRole]=useState(null);
   const [mod,setMod]=useState("dashboard");
   const [sidebarOpen,setSidebarOpen]=useState(true);
+
+  const handleLogin=(u)=>{setUser(u);setRole(u.role);setMod(u.role==="learner"?"profile":"dashboard");};
+  const handleLogout=async()=>{if(sb)await sb.auth.signOut();setUser(null);setRole(null);setMod("dashboard");};
+
+  if(!user){return <LoginScreen onLogin={handleLogin}/>;}
 
   if(!role){
     return(
@@ -832,6 +1244,7 @@ function App(){
   const cur=ROLES.find(r=>r.id===role);
   const renderModule=()=>{
     switch(mod){
+      case"profile":return <LearnerProfileModule user={user}/>;
       case"dashboard":return <Dashboard/>;case"placements":return <PlacementModule/>;case"surveys":return <SurveyModule/>;
       case"brochure":return <BrochureModule/>;case"notifications":return <NotificationsModule/>;case"reporting":return <ReportingModule/>;
       case"logbook":return <LogbookModule/>;case"industry":return <IndustryModule/>;case"cv":return <CVModule/>;
@@ -860,7 +1273,7 @@ function App(){
         </nav>
         <div className="p-2 border-t border-gray-100 space-y-0.5">
           <button onClick={()=>setSidebarOpen(!sidebarOpen)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50"><I name="menu" className="text-gray-400" size={18}/>{sidebarOpen&&<span>Toggle</span>}</button>
-          <button onClick={()=>{setRole(null);setMod("dashboard");}} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50"><I name="logout" className="text-gray-400" size={18}/>{sidebarOpen&&<span>Switch Role</span>}</button>
+          <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50"><I name="logout" className="text-gray-400" size={18}/>{sidebarOpen&&<span>Sign Out</span>}</button>
         </div>
       </div>
 
@@ -870,7 +1283,7 @@ function App(){
           <div className="relative w-48 sm:w-72"><I name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16}/><input placeholder="Search..." className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
           <div className="flex items-center gap-3">
             <button className="relative p-2 hover:bg-gray-100 rounded-xl"><I name="bell" className="text-gray-500" size={20}/><span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"/></button>
-            <div className="flex items-center gap-2 pl-3 border-l border-gray-200"><div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">TO</div><span className="text-sm font-medium text-gray-700 hidden sm:inline">Tamatey O.</span></div>
+            <div className="flex items-center gap-2 pl-3 border-l border-gray-200"><div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">{user?.initials||"U"}</div><span className="text-sm font-medium text-gray-700 hidden sm:inline">{user?.name||"User"}</span></div>
           </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto">{renderModule()}</main>
